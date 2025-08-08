@@ -1,0 +1,63 @@
+### Insurance Management System API Tests
+
+### Variables
+# HTTPS (Development sertifikası gerekli)
+@baseUrlHttps = https://localhost:7128/api
+# HTTP (Alternatif)
+@baseUrlHttp = http://localhost:5000/api
+# Aktif base URL (HTTP kullanın eğer HTTPS çalışmıyorsa)
+@baseUrl = http://localhost:5000/api
+@adminEmail = admin@insurance.com
+@adminPassword = Admin123!
+@auth_token =
+
+### 1. Admin Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "{{adminEmail}}",
+    "password": "{{adminPassword}}"
+}
+
+### 2. Get Current User (requires token)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{auth_token}}
+
+### 3. Register New User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+    "name": "Test User",
+    "email": "test@insurance.com",
+    "password": "Test123!",
+    "confirmPassword": "Test123!",
+    "role": "Customer"
+}
+
+### 4. Login with New User
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+    "email": "test@insurance.com",
+    "password": "Test123!"
+}
+
+### 5. Validate Token
+POST {{baseUrl}}/auth/validate
+Content-Type: application/json
+
+"{{auth_token}}"
+
+### 6. Test HTTP Endpoint (Alternatif)
+GET {{baseUrlHttp}}/auth/me
+Authorization: Bearer {{auth_token}}
+
+### 7. Test HTTPS Endpoint (Development sertifikası gerekli)
+GET {{baseUrlHttps}}/auth/me
+Authorization: Bearer {{auth_token}}
+
+### 8. Test API Connection
+GET {{baseUrl}}/auth/test
