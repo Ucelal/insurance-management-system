@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using InsuranceAPI.DTOs;
 using InsuranceAPI.Services;
+using InsuranceAPI.Data;
 
 namespace InsuranceAPI.Controllers
 {
@@ -9,12 +12,19 @@ namespace InsuranceAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly InsuranceDbContext _context;
         
-        public AuthController(IAuthService authService)
+        private readonly IConfiguration _configuration;
+        
+        // Auth service dependency injection
+        public AuthController(IAuthService authService, InsuranceDbContext context, IConfiguration configuration)
         {
             _authService = authService;
+            _context = context;
+            _configuration = configuration;
         }
         
+        // Kullanıcı giriş işlemi
         [HttpPost("login")]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto loginDto)
         {
@@ -33,6 +43,7 @@ namespace InsuranceAPI.Controllers
             return Ok(result);
         }
         
+        // Kullanıcı kayıt işlemi
         [HttpPost("register")]
         public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto registerDto)
         {
@@ -51,6 +62,7 @@ namespace InsuranceAPI.Controllers
             return CreatedAtAction(nameof(Login), result);
         }
         
+        // Token doğrulama işlemi
         [HttpPost("validate")]
         public async Task<ActionResult> ValidateToken([FromBody] string token)
         {
@@ -64,6 +76,7 @@ namespace InsuranceAPI.Controllers
             return Ok(new { message = "Token is valid" });
         }
         
+        // Mevcut kullanıcı bilgilerini getir
         [HttpGet("me")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
@@ -84,12 +97,14 @@ namespace InsuranceAPI.Controllers
             return Ok(user);
         }
         
+        // API test endpoint
         [HttpGet("test")]
         public ActionResult Test()
         {
             return Ok(new { message = "API is working!", timestamp = DateTime.UtcNow });
         }
         
+        // Şifre debug endpoint
         [HttpGet("debug-password")]
         public async Task<ActionResult> DebugPassword()
         {
@@ -108,6 +123,44 @@ namespace InsuranceAPI.Controllers
                 testPassword = testPassword,
                 isPasswordValid = isPasswordValid
             });
+        }
+        
+        // Register debug endpoint
+        [HttpPost("debug-register")]
+        public async Task<ActionResult> DebugRegister([FromBody] RegisterDto registerDto)
+        {
+            return Ok(new { 
+                receivedData = registerDto,
+                modelStateErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(),
+                isValid = ModelState.IsValid,
+                emailExists = await _authService.GetUserByEmailAsync(registerDto.Email) != null
+            });
+        }
+        
+        // Veritabanı bağlantı test endpoint
+        [HttpGet("debug-db")]
+        public async Task<ActionResult> DebugDatabase()
+        {
+            try
+            {
+                var userCount = await _context.Users.CountAsync();
+                var allEmails = await _context.Users.Select(u => u.Email).ToListAsync();
+                
+                return Ok(new { 
+                    success = true,
+                    userCount = userCount,
+                    allEmails = allEmails,
+                    connectionString = _configuration.GetConnectionString("DefaultConnection")
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { 
+                    success = false,
+                    error = ex.Message,
+                    connectionString = _configuration.GetConnectionString("DefaultConnection")
+                });
+            }
         }
     }
 } 

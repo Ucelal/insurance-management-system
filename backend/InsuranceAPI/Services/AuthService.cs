@@ -11,12 +11,14 @@ namespace InsuranceAPI.Services
         private readonly InsuranceDbContext _context;
         private readonly JwtService _jwtService;
         
+        // Auth service constructor - dependency injection
         public AuthService(InsuranceDbContext context, JwtService jwtService)
         {
             _context = context;
             _jwtService = jwtService;
         }
         
+        // Kullanıcı giriş işlemi - email ve şifre doğrulama
         public async Task<AuthResponseDto?> LoginAsync(LoginDto loginDto)
         {
             var user = await _context.Users
@@ -56,6 +58,7 @@ namespace InsuranceAPI.Services
             };
         }
         
+        // Kullanıcı kayıt işlemi - yeni kullanıcı oluşturma
         public async Task<AuthResponseDto?> RegisterAsync(RegisterDto registerDto)
         {
             // Check if email already exists
@@ -76,6 +79,22 @@ namespace InsuranceAPI.Services
             
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+            
+            // Eğer kullanıcı customer rolü ile kayıt oluyorsa, Customers tablosuna da ekle
+            if (registerDto.Role.ToLower() == "customer")
+            {
+                var customer = new Customer
+                {
+                    UserId = user.Id,
+                    Type = "bireysel", // Varsayılan olarak bireysel
+                    IdNo = $"CUST_{user.Id}_{DateTime.UtcNow:yyyyMMdd}", // Otomatik ID No oluştur
+                    Address = "",
+                    Phone = ""
+                };
+                
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();
+            }
             
             // Generate tokens
             var token = _jwtService.GenerateToken(user);

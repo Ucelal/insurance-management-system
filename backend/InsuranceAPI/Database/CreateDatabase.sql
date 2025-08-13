@@ -70,8 +70,90 @@ BEGIN
 END
 GO
 
--- 7. Verify Tables
+-- 5. Create Offers Table
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Offers')
+BEGIN
+    CREATE TABLE Offers (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Customer_Id INT NOT NULL,
+        Insurance_Type NVARCHAR(100) NOT NULL,
+        Price DECIMAL(18,2) NOT NULL,
+        Status NVARCHAR(50) NOT NULL CHECK (Status IN ('pending', 'approved', 'cancelled')),
+        FOREIGN KEY (Customer_Id) REFERENCES Customers(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- 6. Create Policies Table
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Policies')
+BEGIN
+    CREATE TABLE Policies (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Offer_Id INT NOT NULL,
+        Start_Date DATE NOT NULL,
+        End_Date DATE NOT NULL,
+        Policy_Number NVARCHAR(100) NOT NULL UNIQUE,
+        FOREIGN KEY (Offer_Id) REFERENCES Offers(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- 7. Create Claims Table
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Claims')
+BEGIN
+    CREATE TABLE Claims (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Policy_Id INT NOT NULL,
+        Description NVARCHAR(MAX),
+        Status NVARCHAR(50) NOT NULL CHECK (Status IN ('pending', 'in_review', 'resolved')),
+        Created_At DATETIME NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (Policy_Id) REFERENCES Policies(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- 8. Create Payments Table
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Payments')
+BEGIN
+    CREATE TABLE Payments (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Policy_Id INT NOT NULL,
+        Amount DECIMAL(18,2) NOT NULL,
+        Paid_At DATETIME NOT NULL DEFAULT GETDATE(),
+        Method NVARCHAR(50) NOT NULL CHECK (Method IN ('nakit', 'kredi', 'havale')),
+        FOREIGN KEY (Policy_Id) REFERENCES Policies(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- 9. Create Documents Table
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Documents')
+BEGIN
+    CREATE TABLE Documents (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        Customer_Id INT NULL,
+        Claim_Id INT NULL,
+        File_Name NVARCHAR(255) NOT NULL,
+        File_Url NVARCHAR(MAX) NOT NULL,
+        Uploaded_At DATETIME NOT NULL DEFAULT GETDATE(),
+        FOREIGN KEY (Customer_Id) REFERENCES Customers(Id) ON DELETE SET NULL,
+        FOREIGN KEY (Claim_Id) REFERENCES Claims(Id) ON DELETE SET NULL
+    );
+END
+GO
+
+-- 10. Verify Tables
 SELECT 'Users Table:' as TableName, COUNT(*) as RecordCount FROM Users
 UNION ALL
-SELECT 'Customers Table:', COUNT(*) FROM Customers;
+SELECT 'Customers Table:', COUNT(*) FROM Customers
+UNION ALL
+SELECT 'Offers Table:', COUNT(*) FROM Offers
+UNION ALL
+SELECT 'Policies Table:', COUNT(*) FROM Policies
+UNION ALL
+SELECT 'Claims Table:', COUNT(*) FROM Claims
+UNION ALL
+SELECT 'Payments Table:', COUNT(*) FROM Payments
+UNION ALL
+SELECT 'Documents Table:', COUNT(*) FROM Documents;
 GO 

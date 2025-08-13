@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using InsuranceAPI.Models;
+using SecurityClaim = System.Security.Claims.Claim;
 
 namespace InsuranceAPI.Services
 {
@@ -20,7 +21,7 @@ namespace InsuranceAPI.Services
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Secret"] ?? "your-super-secret-key-with-at-least-32-characters");
             
-            var claims = new List<Claim>
+            var claims = new List<SecurityClaim>
             {
                 new(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new(ClaimTypes.Name, user.Name),

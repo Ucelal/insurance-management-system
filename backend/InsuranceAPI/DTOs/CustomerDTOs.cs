@@ -8,6 +8,7 @@ namespace InsuranceAPI.DTOs
         public string IdNo { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Phone { get; set; }
+        public UserDto? User { get; set; }
     }
     
     public class CreateCustomerDto
@@ -16,6 +17,7 @@ namespace InsuranceAPI.DTOs
         public string IdNo { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Phone { get; set; }
+        public int? UserId { get; set; }
     }
     
     public class UpdateCustomerDto
@@ -24,5 +26,6 @@ namespace InsuranceAPI.DTOs
         public string IdNo { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Phone { get; set; }
+        public int? UserId { get; set; }
     }
 } 

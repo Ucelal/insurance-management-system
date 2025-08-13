@@ -7,7 +7,7 @@ using InsuranceAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Servisleri container'a ekle
+// Controller ve API explorer servislerini ekle
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -45,7 +45,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS politikasını ekle
+// CORS politikasını ekle - React uygulaması için
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp",
@@ -58,11 +58,11 @@ builder.Services.AddCors(options =>
         });
 });
 
-// Veritabanı bağlantısını ekle
+// Entity Framework veritabanı bağlantısını ekle
 builder.Services.AddDbContext<InsuranceDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// JWT kimlik doğrulama ekle
+// JWT kimlik doğrulama servisini ekle
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -80,12 +80,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-// Yetkilendirme ekle
+// Yetkilendirme servisini ekle
 builder.Services.AddAuthorization();
 
-// Servisleri kaydet
+// Business logic servislerini kaydet
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IOfferService, OfferService>(); // Teklif servisini kaydet
+builder.Services.AddScoped<IPolicyService, PolicyService>(); // Poliçe servisini kaydet
 
 var app = builder.Build();
 
