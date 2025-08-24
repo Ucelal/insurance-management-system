@@ -1,21 +1,25 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using InsuranceAPI.DTOs;
 using InsuranceAPI.Services;
+using InsuranceAPI.Data;
 
 namespace InsuranceAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize] // JWT authentication gerekli - geçici olarak kaldırıldı
+    [Authorize] // JWT authentication aktif
     public class OfferController : ControllerBase
     {
         private readonly IOfferService _offerService;
+        private readonly InsuranceDbContext _context;
         
         // Offer service dependency injection
-        public OfferController(IOfferService offerService)
+        public OfferController(IOfferService offerService, InsuranceDbContext context)
         {
             _offerService = offerService;
+            _context = context;
         }
         
         // Tüm teklifleri getir
@@ -116,21 +120,29 @@ namespace InsuranceAPI.Controllers
             return Ok(offers);
         }
         
-        // Sigorta türlerini getir
+        // Sigorta türlerini getir (veritabanından)
         [HttpGet("types")]
-        public ActionResult GetInsuranceTypes()
+        public async Task<ActionResult<List<InsuranceTypeDto>>> GetInsuranceTypes()
         {
-            var types = new[]
-            {
-                new { Value = "Kasko", Label = "Kasko" },
-                new { Value = "Trafik", Label = "Trafik" },
-                new { Value = "Konut", Label = "Konut" },
-                new { Value = "Saglik", Label = "Sağlık" },
-                new { Value = "Hayat", Label = "Hayat" },
-                new { Value = "Isyeri", Label = "İşyeri" }
-            };
-            
-            return Ok(types);
+            var insuranceTypes = await _context.InsuranceTypes
+                .Where(it => it.IsActive)
+                .OrderBy(it => it.Category)
+                .ThenBy(it => it.Name)
+                .Select(it => new InsuranceTypeDto
+                {
+                    Id = it.Id,
+                    Name = it.Name,
+                    Category = it.Category,
+                    Description = it.Description,
+                    IsActive = it.IsActive,
+                    BasePrice = it.BasePrice,
+                    CoverageDetails = it.CoverageDetails,
+                    CreatedAt = it.CreatedAt,
+                    UpdatedAt = it.UpdatedAt
+                })
+                .ToListAsync();
+                
+            return Ok(insuranceTypes);
         }
         
         // Teklif durumlarını getir

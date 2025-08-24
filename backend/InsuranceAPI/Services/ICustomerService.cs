@@ -24,5 +24,13 @@ namespace InsuranceAPI.Services
         
         // ID No'ya göre müşteri kontrol et
         Task<bool> IsIdNoExistsAsync(string idNo);
+        
+        // Yeni gelişmiş metodlar
+        Task<CustomerStatisticsDto> GetCustomerStatisticsAsync();
+        Task<object> GetCustomersGroupedAsync();
+        Task<List<CustomerActivityDto>> GetCustomerActivityAsync(int customerId);
+        Task<object> BulkUpdateCustomersAsync(List<BulkUpdateCustomerDto> updates);
+        Task<string> ExportCustomersAsync(string? format);
+        Task<object> ImportCustomersAsync(IFormFile file);
     }
 }

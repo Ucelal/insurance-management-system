@@ -17,8 +17,20 @@ namespace InsuranceAPI.Models
         public DateTime PaidAt { get; set; } = DateTime.UtcNow; // Ödeme tarihi
 
         [Required]
-        [MaxLength(50)]
-        public string Method { get; set; } = "nakit"; // Ödeme yöntemi
+        public PaymentMethod Method { get; set; } = PaymentMethod.KrediKarti; // Ödeme yöntemi
+
+        [Required]
+        public PaymentStatus Status { get; set; } = PaymentStatus.Beklemede; // Ödeme durumu
+
+        [MaxLength(100)]
+        public string? TransactionId { get; set; } // Banka işlem numarası
+
+        [MaxLength(500)]
+        public string? Notes { get; set; } // Notlar
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Oluşturulma tarihi
+
+        public DateTime? UpdatedAt { get; set; } // Güncellenme tarihi
 
         [ForeignKey("PolicyId")]
         public virtual Policy? Policy { get; set; }

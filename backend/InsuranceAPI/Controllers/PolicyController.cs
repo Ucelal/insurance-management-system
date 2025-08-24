@@ -7,7 +7,7 @@ namespace InsuranceAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize] // JWT authentication gerekli - geçici olarak kaldırıldı
+    [Authorize] // JWT authentication aktif
     public class PolicyController : ControllerBase
     {
         private readonly IPolicyService _policyService;

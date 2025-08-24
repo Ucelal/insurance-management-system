@@ -7,15 +7,18 @@ namespace InsuranceAPI.Models
     {
         public int Id { get; set; }
         
-        public int? UserId { get; set; }
+        [Required]
+        public int UserId { get; set; }
         
         [Required]
         [MaxLength(50)]
-        public string Type { get; set; } = string.Empty; // "bireysel" veya "kurumsal"
+        public string Type { get; set; } = string.Empty; // bireysel, kurumsal
+        
+
         
         [Required]
         [MaxLength(50)]
-        public string IdNo { get; set; } = string.Empty;
+        public string IdNo { get; set; } = string.Empty; // TC kimlik, vergi no
         
         [MaxLength(1000)]
         public string? Address { get; set; }
@@ -23,8 +26,11 @@ namespace InsuranceAPI.Models
         [MaxLength(20)]
         public string? Phone { get; set; }
         
-        // Navigation property
+        // Navigation properties
         [ForeignKey("UserId")]
         public virtual User? User { get; set; }
+        
+        public virtual ICollection<Offer>? Offers { get; set; }
+        public virtual ICollection<Document>? Documents { get; set; }
     }
 } 

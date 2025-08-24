@@ -20,6 +20,8 @@ namespace InsuranceAPI.Services
         {
             var offers = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .OrderBy(o => o.Id)
                 .ToListAsync();
                 
@@ -31,6 +33,8 @@ namespace InsuranceAPI.Services
         {
             var offer = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .FirstOrDefaultAsync(o => o.Id == id);
                 
             return offer != null ? MapToDto(offer) : null;
@@ -46,12 +50,32 @@ namespace InsuranceAPI.Services
                 return null;
             }
             
+            // Agent kontrolü
+            var agent = await _context.Agents.FindAsync(createOfferDto.AgentId);
+            if (agent == null)
+            {
+                return null;
+            }
+            
+            // InsuranceType kontrolü
+            var insuranceType = await _context.InsuranceTypes.FindAsync(createOfferDto.InsuranceTypeId);
+            if (insuranceType == null)
+            {
+                return null;
+            }
+            
             var offer = new Offer
             {
                 CustomerId = createOfferDto.CustomerId,
-                InsuranceType = createOfferDto.InsuranceType,
-                Price = createOfferDto.Price,
-                Status = createOfferDto.Status
+                AgentId = createOfferDto.AgentId,
+                InsuranceTypeId = createOfferDto.InsuranceTypeId,
+                Description = createOfferDto.Description ?? string.Empty,
+                BasePrice = insuranceType.BasePrice,
+                DiscountRate = createOfferDto.DiscountRate ?? 0,
+                FinalPrice = insuranceType.BasePrice * (1 - (createOfferDto.DiscountRate ?? 0) / 100),
+                Status = "pending",
+                ValidUntil = DateTime.UtcNow.AddDays(30),
+                CreatedAt = DateTime.UtcNow
             };
             
             _context.Offers.Add(offer);
@@ -60,6 +84,8 @@ namespace InsuranceAPI.Services
             // Oluşturulan teklifi müşteri bilgisiyle birlikte getir
             var createdOffer = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .FirstOrDefaultAsync(o => o.Id == offer.Id);
                 
             return createdOffer != null ? MapToDto(createdOffer) : null;
@@ -75,15 +101,43 @@ namespace InsuranceAPI.Services
                 return null;
             }
             
-            offer.InsuranceType = updateOfferDto.InsuranceType;
-            offer.Price = updateOfferDto.Price;
-            offer.Status = updateOfferDto.Status;
+            // InsuranceType kontrolü
+            if (updateOfferDto.InsuranceTypeId.HasValue)
+            {
+                var insuranceType = await _context.InsuranceTypes.FindAsync(updateOfferDto.InsuranceTypeId.Value);
+                if (insuranceType == null)
+                {
+                    return null;
+                }
+                offer.InsuranceTypeId = updateOfferDto.InsuranceTypeId.Value;
+                offer.BasePrice = insuranceType.BasePrice;
+            }
+            
+            if (!string.IsNullOrEmpty(updateOfferDto.Description))
+            {
+                offer.Description = updateOfferDto.Description;
+            }
+            
+            if (updateOfferDto.DiscountRate.HasValue)
+            {
+                offer.DiscountRate = updateOfferDto.DiscountRate.Value;
+                offer.FinalPrice = offer.BasePrice * (1 - offer.DiscountRate / 100);
+            }
+            
+            if (!string.IsNullOrEmpty(updateOfferDto.Status))
+            {
+                offer.Status = updateOfferDto.Status;
+            }
+            
+            offer.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();
             
             // Güncellenmiş teklifi müşteri bilgisiyle birlikte getir
             var updatedOffer = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .FirstOrDefaultAsync(o => o.Id == id);
                 
             return updatedOffer != null ? MapToDto(updatedOffer) : null;
@@ -110,6 +164,8 @@ namespace InsuranceAPI.Services
         {
             var offers = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .Where(o => o.CustomerId == customerId)
                 .OrderBy(o => o.Id)
                 .ToListAsync();
@@ -122,6 +178,8 @@ namespace InsuranceAPI.Services
         {
             var offers = await _context.Offers
                 .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
                 .Where(o => o.Status == status)
                 .OrderBy(o => o.Id)
                 .ToListAsync();
@@ -132,11 +190,15 @@ namespace InsuranceAPI.Services
         // Teklif arama
         public async Task<List<OfferDto>> SearchOffersAsync(string? insuranceType, string? status, decimal? minPrice, decimal? maxPrice)
         {
-            var query = _context.Offers.Include(o => o.Customer).AsQueryable();
+            var query = _context.Offers
+                .Include(o => o.Customer)
+                .Include(o => o.Agent)
+                .Include(o => o.InsuranceType)
+                .AsQueryable();
             
             if (!string.IsNullOrEmpty(insuranceType))
             {
-                query = query.Where(o => o.InsuranceType.Contains(insuranceType));
+                query = query.Where(o => o.InsuranceType.Name.Contains(insuranceType));
             }
             
             if (!string.IsNullOrEmpty(status))
@@ -146,12 +208,12 @@ namespace InsuranceAPI.Services
             
             if (minPrice.HasValue)
             {
-                query = query.Where(o => o.Price >= minPrice.Value);
+                query = query.Where(o => o.FinalPrice >= minPrice.Value);
             }
             
             if (maxPrice.HasValue)
             {
-                query = query.Where(o => o.Price <= maxPrice.Value);
+                query = query.Where(o => o.FinalPrice <= maxPrice.Value);
             }
             
             var offers = await query.OrderBy(o => o.Id).ToListAsync();
@@ -166,9 +228,18 @@ namespace InsuranceAPI.Services
             {
                 Id = offer.Id,
                 CustomerId = offer.CustomerId,
-                InsuranceType = offer.InsuranceType,
-                Price = offer.Price,
+                AgentId = offer.AgentId,
+                InsuranceTypeId = offer.InsuranceTypeId,
+                Description = offer.Description,
+                BasePrice = offer.BasePrice,
+                DiscountRate = offer.DiscountRate,
+                FinalPrice = offer.FinalPrice,
                 Status = offer.Status,
+                ValidUntil = offer.ValidUntil,
+                CreatedAt = offer.CreatedAt,
+                UpdatedAt = offer.UpdatedAt,
+                
+                // Navigation properties
                 Customer = offer.Customer != null ? new CustomerDto
                 {
                     Id = offer.Customer.Id,
@@ -177,7 +248,41 @@ namespace InsuranceAPI.Services
                     IdNo = offer.Customer.IdNo,
                     Address = offer.Customer.Address,
                     Phone = offer.Customer.Phone
-                } : null
+                } : null,
+                
+                Agent = offer.Agent != null ? new AgentDto
+                {
+                    Id = offer.Agent.Id,
+                    UserId = offer.Agent.UserId,
+                    AgentCode = offer.Agent.AgentCode,
+                    Department = offer.Agent.Department,
+                    Address = offer.Agent.Address,
+                    Phone = offer.Agent.Phone
+                } : null,
+                
+                InsuranceType = offer.InsuranceType != null ? new InsuranceTypeDto
+                {
+                    Id = offer.InsuranceType.Id,
+                    Name = offer.InsuranceType.Name,
+                    Category = offer.InsuranceType.Category,
+                    Description = offer.InsuranceType.Description,
+                    IsActive = offer.InsuranceType.IsActive,
+                    BasePrice = offer.InsuranceType.BasePrice,
+                    CoverageDetails = offer.InsuranceType.CoverageDetails,
+                    CreatedAt = offer.InsuranceType.CreatedAt,
+                    UpdatedAt = offer.InsuranceType.UpdatedAt
+                } : null,
+                
+                SelectedCoverages = offer.SelectedCoverages?.Select(sc => new SelectedCoverageDto
+                {
+                    Id = sc.Id,
+                    OfferId = sc.OfferId,
+                    CoverageId = sc.CoverageId,
+                    SelectedLimit = sc.SelectedLimit,
+                    Premium = sc.Premium,
+                    IsSelected = sc.IsSelected,
+                    CreatedAt = sc.CreatedAt
+                }).ToList() ?? new List<SelectedCoverageDto>()
             };
         }
     }

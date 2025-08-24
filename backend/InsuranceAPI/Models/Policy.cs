@@ -8,26 +8,49 @@ namespace InsuranceAPI.Models
         public int Id { get; set; }
         
         [Required]
-        public int OfferId { get; set; } // Teklif ID'si
+        public int OfferId { get; set; }
         
-        [Required]
-        public DateTime StartDate { get; set; } // Başlangıç tarihi
-        
-        [Required]
-        public DateTime EndDate { get; set; } // Bitiş tarihi
-        
+        // Poliçe Detayları
         [Required]
         [MaxLength(100)]
-        public string PolicyNumber { get; set; } = string.Empty; // Poliçe numarası
+        public string PolicyNumber { get; set; } = string.Empty;
         
-        // Navigation property
+        [Required]
+        public DateTime StartDate { get; set; }
+        
+        [Required]
+        public DateTime EndDate { get; set; }
+        
+        [Required]
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal TotalPremium { get; set; }
+        
+        [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = "active"; // active, expired, cancelled, suspended
+        
+        // Ödeme Bilgileri
+        [MaxLength(50)]
+        public string PaymentMethod { get; set; } = string.Empty; // credit_card, bank_transfer, cash
+        
+        public DateTime? PaidAt { get; set; }
+        
+        [Required]
+        [MaxLength(50)]
+        public string PaymentStatus { get; set; } = "pending"; // pending, paid, failed, refunded
+        
+        // Ek Bilgiler
+        [MaxLength(1000)]
+        public string Notes { get; set; } = string.Empty;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
+        
+        // Navigation properties
         [ForeignKey("OfferId")]
         public virtual Offer? Offer { get; set; }
         
-        // One-to-many relationship with Claims
-        public virtual ICollection<Claim>? Claims { get; set; }
-        
-        // One-to-many relationship with Payments
-        public virtual ICollection<Payment>? Payments { get; set; }
+        public virtual List<Claim>? Claims { get; set; }
+        public virtual List<Payment>? Payments { get; set; }
     }
 }

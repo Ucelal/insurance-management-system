@@ -1,269 +1,1263 @@
 {
-	"info": {
-		"_postman_id": "insurance-api-collection",
-		"name": "Insurance API Tests",
-		"description": "Sigorta Yönetim Platformu API Testleri",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "Register User",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\",\n  \"confirmPassword\": \"Test123!\",\n  \"role\": \"customer\"\n}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/auth/register",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"auth",
-						"register"
-					]
-				}
-			}
-		},
-		{
-			"name": "Login User",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\"\n}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/auth/login",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"auth",
-						"login"
-					]
-				}
-			}
-		},
-		{
-			"name": "Get Current User",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/auth/me",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"auth",
-						"me"
-					]
-				}
-			}
-		},
-		{
-			"name": "Create Customer",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"type\": \"bireysel\",\n  \"idNo\": \"12345678901\",\n  \"address\": \"Test Address, Istanbul\",\n  \"phone\": \"5551234567\",\n  \"userId\": {{userId}}\n}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/customer",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"customer"
-					]
-				}
-			}
-		},
-		{
-			"name": "Get All Customers",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/customer",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"customer"
-					]
-				}
-			}
-		},
-		{
-			"name": "Create Offer",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"customerId\": {{customerId}},\n  \"insuranceType\": \"Kasko\",\n  \"price\": 1500.00,\n  \"status\": \"pending\"\n}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/offer",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"offer"
-					]
-				}
-			}
-		},
-		{
-			"name": "Get All Offers",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/offer",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"offer"
-					]
-				}
-			}
-		},
-		{
-			"name": "Create Policy",
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					},
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n  \"offerId\": {{offerId}},\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2025-01-01\",\n  \"policyNumber\": \"POL-2024-001\"\n}"
-				},
-				"url": {
-					"raw": "{{baseUrl}}/api/policy",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"policy"
-					]
-				}
-			}
-		},
-		{
-			"name": "Get All Policies",
-			"request": {
-				"method": "GET",
-				"header": [
-					{
-						"key": "Authorization",
-						"value": "Bearer {{authToken}}"
-					}
-				],
-				"url": {
-					"raw": "{{baseUrl}}/api/policy",
-					"host": [
-						"{{baseUrl}}"
-					],
-					"path": [
-						"api",
-						"policy"
-					]
-				}
-			}
-		}
-	],
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:5000"
-		},
-		{
-			"key": "authToken",
-			"value": ""
-		},
-		{
-			"key": "userId",
-			"value": ""
-		},
-		{
-			"key": "customerId",
-			"value": ""
-		},
-		{
-			"key": "offerId",
-			"value": ""
-		},
-		{
-			"key": "policyId",
-			"value": ""
-		}
-	]
+  "info": {
+    "name": "Insurance Management System API",
+    "description": "Insurance Management System için güncellenmiş API collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@insurance.com\",\n  \"password\": \"Admin123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Customer Register (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ahmet Yılmaz\",\n  \"email\": \"ahmet@example.com\",\n  \"password\": \"Ahmet123!\",\n  \"confirmPassword\": \"Ahmet123!\",\n  \"tcNo\": \"12345678901\",\n  \"address\": \"Atatürk Cad. No:123, İstanbul\",\n  \"phone\": \"555 123 4567\",\n  \"customerType\": \"bireysel\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/register/customer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "register", "customer"]
+            }
+          }
+        },
+        {
+          "name": "Agent Register (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Fatma Demir\",\n  \"email\": \"fatma@insurance.com\",\n  \"password\": \"Fatma123!\",\n  \"confirmPassword\": \"Fatma123!\",\n  \"agentCode\": \"AG001\",\n  \"address\": \"Merkez Mah. No:45, Ankara\",\n  \"phone\": \"0555 987 6543\",\n  \"department\": \"Satış\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/register/agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "register", "agent"]
+            }
+          }
+        },
+        {
+          "name": "Test Agent Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{testAgentEmail}}\",\n  \"password\": \"{{testAgentPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "me"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel",
+      "item": [
+        {
+          "name": "User Register (Admin Only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test123!\",\n  \"confirmPassword\": \"Test123!\",\n  \"role\": \"customer\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/admin/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/admin/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "admin", "users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"agent\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/admin/users/{{userId}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "admin", "users", "{{userId}}", "role"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Management",
+      "item": [
+        {
+          "name": "Get All Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Customer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"type\": \"bireysel\",\n  \"email\": \"customer@example.com\",\n  \"idNo\": \"98765432109\",\n  \"address\": \"Test Address\",\n  \"phone\": \"555 987 6543\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer"]
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"kurumsal\",\n  \"email\": \"updated@example.com\",\n  \"idNo\": \"98765432109\",\n  \"address\": \"Updated Address\",\n  \"phone\": \"555 987 6543\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "{{customerId}}"]
+            }
+          }
+        },
+        {
+          "name": "Search Customers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/search?name=Ahmet&type=bireysel&idNo=12345678901",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "search"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "Ahmet"
+                },
+                {
+                  "key": "type",
+                  "value": "bireysel"
+                },
+                {
+                  "key": "idNo",
+                  "value": "12345678901"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/types",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "types"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/statistics",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "statistics"]
+            }
+          }
+        },
+        {
+          "name": "Get Customers Grouped",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/grouped",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "grouped"]
+            }
+          }
+        },
+        {
+          "name": "Get Customer Activity",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/{{customerId}}/activity",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "{{customerId}}", "activity"]
+            }
+          }
+        },
+        {
+          "name": "Bulk Update Customers",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"id\": 1,\n    \"type\": \"kurumsal\",\n    \"email\": \"bulk1@example.com\",\n    \"address\": \"New Address 1\",\n    \"phone\": \"555 111 1111\"\n  },\n  {\n    \"id\": 2,\n    \"type\": \"bireysel\",\n    \"email\": \"bulk2@example.com\",\n    \"address\": \"New Address 2\",\n    \"phone\": \"555 222 2222\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Export Customers (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Import Customers (CSV)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Customer/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Customer", "import"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Production Module",
+      "item": [
+        {
+          "name": "Create Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": {{customerId}},\n  \"agentId\": {{agentId}},\n  \"insuranceType\": \"kasko\",\n  \"price\": 1500.00,\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Offer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Offer"]
+            }
+          }
+        },
+        {
+          "name": "Get All Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Offer",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Offer"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Insurance Types",
+      "item": [
+        {
+          "name": "Get All Insurance Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/InsuranceType",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "InsuranceType"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Agent Management",
+      "item": [
+        {
+          "name": "Get All Agents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent"]
+            }
+          }
+        },
+        {
+          "name": "Get Agent by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Agent by User ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/user/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "user", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Agents by Department",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/department/Satış",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "department", "Satış"]
+            }
+          }
+        },
+        {
+          "name": "Create Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 3,\n  \"agentCode\": \"AG002\",\n  \"department\": \"Satış\",\n  \"address\": \"Yeni Acenta Adresi\",\n  \"phone\": \"555 111 2222\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent"]
+            }
+          }
+        },
+        {
+          "name": "Update Agent",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"agentCode\": \"AG002-UPDATED\",\n  \"department\": \"Satış ve Pazarlama\",\n  \"address\": \"Güncellenmiş Adres\",\n  \"phone\": \"555 999 8888\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Agent",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "1"]
+            }
+          }
+        },
+        {
+          "name": "Check Agent Code Unique",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Agent/check-code/AG003",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Agent", "check-code", "AG003"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "customerId",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "category",
+                  "value": "poliçe",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Test dosyası",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "upload"]
+            }
+          }
+        },
+        {
+          "name": "Download File",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/download/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "download", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Files by Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/customer/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "customer", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Files by Claim",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/claim/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "claim", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Files by Policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/policy/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "policy", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update File Metadata",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Güncellenmiş açıklama\",\n  \"category\": \"güncellenmiş\",\n  \"status\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "1"]
+            }
+          }
+        },
+        {
+          "name": "Check File Access",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/access/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "access", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Supported Formats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/supported-formats",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "supported-formats"]
+            }
+          }
+        },
+        {
+          "name": "Get File Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/FileUpload/status/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "FileUpload", "status", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reporting",
+      "item": [
+        {
+          "name": "Generate Sales Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00Z\",\n  \"endDate\": \"2024-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/sales",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "sales"]
+            }
+          }
+        },
+        {
+          "name": "Generate Claims Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00Z\",\n  \"endDate\": \"2024-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/claims",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "claims"]
+            }
+          }
+        },
+        {
+          "name": "Generate Customer Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00Z\",\n  \"endDate\": \"2024-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "customers"]
+            }
+          }
+        },
+        {
+          "name": "Generate Payment Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"startDate\": \"2024-01-01T00:00:00Z\",\n  \"endDate\": \"2024-12-31T23:59:59Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/payments",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "payments"]
+            }
+          }
+        },
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/dashboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Get Chart Data - Sales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/charts/sales?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "charts", "sales"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Chart Data - Claims",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/charts/claims?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "charts", "claims"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quick Sales Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/sales/quick",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "sales", "quick"]
+            }
+          }
+        },
+        {
+          "name": "Quick Claims Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/claims/quick",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "claims", "quick"]
+            }
+          }
+        },
+        {
+          "name": "Agent Performance Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/agent-performance/1?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "agent-performance", "1"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Customer Segmentation Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/customer-segmentation?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "customer-segmentation"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Trend Analysis Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/Report/trend-analysis?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Report", "trend-analysis"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Debug & Testing",
+      "item": [
+        {
+          "name": "API Test",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "test"]
+            }
+          }
+        },
+        {
+          "name": "Debug Database",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/Auth/debug-db",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "Auth", "debug-db"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": "1"
+    },
+    {
+      "key": "customerId",
+      "value": "1"
+    },
+    {
+      "key": "testAgentEmail",
+      "value": "fatma@insurance.com"
+    },
+    {
+      "key": "testAgentPassword",
+      "value": "Fatma123!"
+    }
+  ]
 }

@@ -8,7 +8,7 @@ namespace InsuranceAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // [Authorize] // JWT authentication gerekli - geçici olarak kaldırıldı
+    [Authorize] // JWT authentication aktif
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;
@@ -123,6 +123,65 @@ namespace InsuranceAPI.Controllers
                 modelStateErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList(),
                 isValid = ModelState.IsValid
             });
+        }
+        
+        // Müşteri istatistikleri - dashboard için
+        [HttpGet("statistics")]
+        public async Task<ActionResult<object>> GetCustomerStatistics()
+        {
+            var stats = await _customerService.GetCustomerStatisticsAsync();
+            return Ok(stats);
+        }
+        
+        // Müşteri sayısına göre gruplandırma
+        [HttpGet("grouped")]
+        public async Task<ActionResult<object>> GetCustomersGrouped()
+        {
+            var grouped = await _customerService.GetCustomersGroupedAsync();
+            return Ok(grouped);
+        }
+        
+        // Müşteri aktivite geçmişi
+        [HttpGet("{id}/activity")]
+        public async Task<ActionResult<List<object>>> GetCustomerActivity(int id)
+        {
+            var activities = await _customerService.GetCustomerActivityAsync(id);
+            return Ok(activities);
+        }
+        
+        // Toplu müşteri güncelleme
+        [HttpPut("bulk")]
+        public async Task<ActionResult<object>> BulkUpdateCustomers([FromBody] List<BulkUpdateCustomerDto> updates)
+        {
+            var result = await _customerService.BulkUpdateCustomersAsync(updates);
+            return Ok(result);
+        }
+        
+        // Müşteri export (CSV format)
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportCustomers([FromQuery] string? format = "csv")
+        {
+            var fileContent = await _customerService.ExportCustomersAsync(format);
+            
+            if (format?.ToLower() == "csv")
+            {
+                return File(System.Text.Encoding.UTF8.GetBytes(fileContent), "text/csv", "customers.csv");
+            }
+            
+            return Ok(fileContent);
+        }
+        
+        // Müşteri import (CSV format)
+        [HttpPost("import")]
+        public async Task<ActionResult<object>> ImportCustomers(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Dosya yüklenmedi" });
+            }
+            
+            var result = await _customerService.ImportCustomersAsync(file);
+            return Ok(result);
         }
     }
 }

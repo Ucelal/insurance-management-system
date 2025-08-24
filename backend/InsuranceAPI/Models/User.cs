@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace InsuranceAPI.Models
 {
@@ -16,7 +17,6 @@ namespace InsuranceAPI.Models
         
         [Required]
         [MaxLength(255)]
-        [EmailAddress]
         public string Email { get; set; } = string.Empty;
         
         [Required]
@@ -24,7 +24,10 @@ namespace InsuranceAPI.Models
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
-        // Navigation property
+        // Navigation properties
         public virtual Customer? Customer { get; set; }
+        public virtual Agent? Agent { get; set; }
+        public virtual ICollection<Claim>? ReportedClaims { get; set; }
+        public virtual ICollection<Claim>? ProcessedClaims { get; set; }
     }
 } 

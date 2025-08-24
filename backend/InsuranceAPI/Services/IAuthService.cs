@@ -7,8 +7,15 @@ namespace InsuranceAPI.Services
     {
         Task<AuthResponseDto?> LoginAsync(LoginDto loginDto);
         Task<AuthResponseDto?> RegisterAsync(RegisterDto registerDto);
-            Task<bool> ValidateTokenAsync(string token);
-    Task<UserDto?> GetUserFromTokenAsync(string token);
-    Task<User?> GetUserByEmailAsync(string email);
+        
+        // Customer kayıt işlemi - özel validasyon ve iş mantığı
+        Task<AuthResponseDto?> RegisterCustomerAsync(CustomerRegisterDto customerRegisterDto);
+        
+        // Agent kayıt işlemi - özel validasyon ve iş mantığı
+        Task<AuthResponseDto?> RegisterAgentAsync(AgentRegisterDto agentRegisterDto);
+        
+        Task<bool> ValidateTokenAsync(string token);
+        Task<UserDto?> GetUserFromTokenAsync(string token);
+        Task<User?> GetUserByEmailAsync(string email);
     }
 } 

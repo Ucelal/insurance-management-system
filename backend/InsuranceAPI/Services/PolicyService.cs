@@ -92,9 +92,47 @@ namespace InsuranceAPI.Services
                 }
             }
             
-            policy.StartDate = updatePolicyDto.StartDate;
-            policy.EndDate = updatePolicyDto.EndDate;
-            policy.PolicyNumber = updatePolicyDto.PolicyNumber;
+            if (updatePolicyDto.StartDate.HasValue)
+            {
+                policy.StartDate = updatePolicyDto.StartDate.Value;
+            }
+            
+            if (updatePolicyDto.EndDate.HasValue)
+            {
+                policy.EndDate = updatePolicyDto.EndDate.Value;
+            }
+            
+            if (!string.IsNullOrEmpty(updatePolicyDto.PolicyNumber))
+            {
+                policy.PolicyNumber = updatePolicyDto.PolicyNumber;
+            }
+            
+            if (updatePolicyDto.TotalPremium.HasValue)
+            {
+                policy.TotalPremium = updatePolicyDto.TotalPremium.Value;
+            }
+            
+            if (!string.IsNullOrEmpty(updatePolicyDto.Status))
+            {
+                policy.Status = updatePolicyDto.Status;
+            }
+            
+            if (!string.IsNullOrEmpty(updatePolicyDto.PaymentMethod))
+            {
+                policy.PaymentMethod = updatePolicyDto.PaymentMethod;
+            }
+            
+            if (!string.IsNullOrEmpty(updatePolicyDto.PaymentStatus))
+            {
+                policy.PaymentStatus = updatePolicyDto.PaymentStatus;
+            }
+            
+            if (!string.IsNullOrEmpty(updatePolicyDto.Notes))
+            {
+                policy.Notes = updatePolicyDto.Notes;
+            }
+            
+            policy.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();
             
@@ -177,13 +215,29 @@ namespace InsuranceAPI.Services
                 StartDate = policy.StartDate,
                 EndDate = policy.EndDate,
                 PolicyNumber = policy.PolicyNumber,
+                TotalPremium = policy.TotalPremium,
+                Status = policy.Status,
+                PaymentMethod = policy.PaymentMethod,
+                PaidAt = policy.PaidAt,
+                PaymentStatus = policy.PaymentStatus,
+                Notes = policy.Notes,
+                CreatedAt = policy.CreatedAt,
+                UpdatedAt = policy.UpdatedAt,
+                
                 Offer = policy.Offer != null ? new OfferDto
                 {
                     Id = policy.Offer.Id,
                     CustomerId = policy.Offer.CustomerId,
-                    InsuranceType = policy.Offer.InsuranceType,
-                    Price = policy.Offer.Price,
-                    Status = policy.Offer.Status
+                    AgentId = policy.Offer.AgentId,
+                    InsuranceTypeId = policy.Offer.InsuranceTypeId,
+                    Description = policy.Offer.Description,
+                    BasePrice = policy.Offer.BasePrice,
+                    DiscountRate = policy.Offer.DiscountRate,
+                    FinalPrice = policy.Offer.FinalPrice,
+                    Status = policy.Offer.Status,
+                    ValidUntil = policy.Offer.ValidUntil,
+                    CreatedAt = policy.Offer.CreatedAt,
+                    UpdatedAt = policy.Offer.UpdatedAt
                 } : null
             };
         }
