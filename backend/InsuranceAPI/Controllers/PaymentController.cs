@@ -101,7 +101,7 @@ namespace InsuranceAPI.Controllers
                 }
                 
                 var payment = await _paymentService.CreatePaymentAsync(createDto);
-                return CreatedAtAction(nameof(GetPaymentById), new { id = payment.Id }, payment);
+                return CreatedAtAction(nameof(GetPaymentById), new { id = payment.UserId }, payment);
             }
             catch (ArgumentException ex)
             {

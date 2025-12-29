@@ -28,18 +28,38 @@ code {
 }
 
 [data-theme="dark"] {
-  --primary-color: #3b82f6;
-  --secondary-color: #94a3b8;
-  --success-color: #22c55e;
-  --danger-color: #f87171;
-  --warning-color: #fbbf24;
-  --background-color: #1f2937;
-  --text-color: #f9fafb;
-  --border-color: #374151;
+  --primary-color: #5b9bd5;
+  --secondary-color: #a8b2c0;
+  --success-color: #4caf50;
+  --danger-color: #ff6b6b;
+  --warning-color: #ffc107;
+  --background-color: #2a2a2a;
+  --text-color: #e8e8e8;
+  --border-color: #404040;
 }
 
 body {
   background-color: var(--background-color);
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Material-UI Card font-weight override */
+.MuiCard-root {
+  font-weight: 500 !important;
+}
+
+.MuiCard-root * {
+  font-weight: 500 !important;
+}
+
+/* Ensure all text inside cards has increased font-weight */
+.MuiCard-root .MuiTypography-root {
+  font-weight: 500 !important;
+}
+
+.MuiCard-root .MuiTypography-h4,
+.MuiCard-root .MuiTypography-h5,
+.MuiCard-root .MuiTypography-h6 {
+  font-weight: 600 !important;
 } 

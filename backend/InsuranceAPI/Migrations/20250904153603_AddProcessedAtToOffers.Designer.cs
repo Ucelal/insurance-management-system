@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InsuranceAPI.Migrations
 {
     [DbContext(typeof(InsuranceDbContext))]
-    [Migration("20250819232156_InitialCreateComplete")]
-    partial class InitialCreateComplete
+    [Migration("20250904153603_AddProcessedAtToOffers")]
+    partial class AddProcessedAtToOffers
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,21 +27,22 @@ namespace InsuranceAPI.Migrations
 
             modelBuilder.Entity("InsuranceAPI.Models.Agent", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("AgentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Agent_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AgentId"));
 
                     b.Property<string>("Address")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("AgentCode")
                         .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)")
+                        .HasColumnName("Agent_Code");
 
                     b.Property<string>("Department")
                         .IsRequired()
@@ -49,130 +50,158 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Phone")
-                        .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int")
                         .HasColumnName("User_Id");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("AgentCode")
-                        .IsUnique();
+                    b.HasKey("AgentId");
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[User_Id] IS NOT NULL");
 
-                    b.ToTable("Agents", (string)null);
+                    b.ToTable("Agents");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Claim", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("ClaimId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Claim_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ClaimId"));
+
+                    b.Property<int?>("AgentId")
+                        .HasColumnType("int")
+                        .HasColumnName("Agent_Id");
 
                     b.Property<decimal?>("ApprovedAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Approved_Amount");
 
                     b.Property<decimal?>("ClaimAmount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Claim_Amount");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
-                    b.Property<int>("CreatedByUserId")
+                    b.Property<int?>("CreatedByUserId")
                         .HasColumnType("int")
                         .HasColumnName("Created_By_User_Id");
 
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("Customer_Id");
+
                     b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime?>("EstimatedResolutionDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Estimated_Resolution_Date");
+
+                    b.Property<DateTime>("IncidentDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Incident_Date");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<int>("PolicyId")
+                    b.Property<int?>("PolicyId")
                         .HasColumnType("int")
                         .HasColumnName("Policy_Id");
 
                     b.Property<string>("Priority")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Normal");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Processed_At");
 
                     b.Property<int?>("ProcessedByUserId")
                         .HasColumnType("int")
                         .HasColumnName("Processed_By_User_Id");
 
+                    b.Property<DateTime>("ReportedDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Reported_Date");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Pending");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Diger");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
+
+                    b.HasKey("ClaimId");
+
+                    b.HasIndex("AgentId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("PolicyId");
 
                     b.HasIndex("ProcessedByUserId");
 
-                    b.ToTable("Claims", (string)null);
+                    b.ToTable("Claims");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Coverage", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("CoverageId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Coverage_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CoverageId"));
+
+                    b.Property<decimal>("BasePremium")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Base_Premium");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("InsuranceTypeId")
+                    b.Property<int?>("InsuranceTypeId")
                         .HasColumnType("int")
                         .HasColumnName("Insurance_Type_Id");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsOptional")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
 
                     b.Property<decimal>("Limit")
                         .HasColumnType("decimal(18,2)");
@@ -185,29 +214,38 @@ namespace InsuranceAPI.Migrations
                     b.Property<decimal>("Premium")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id");
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
+
+                    b.HasKey("CoverageId");
 
                     b.HasIndex("InsuranceTypeId");
 
-                    b.HasIndex("IsActive");
-
-                    b.ToTable("Coverages", (string)null);
+                    b.ToTable("Coverages");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Customer", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("CustomerId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Customer_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CustomerId"));
 
                     b.Property<string>("Address")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("IdNo")
                         .IsRequired()
@@ -224,40 +262,38 @@ namespace InsuranceAPI.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<int>("UserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int")
                         .HasColumnName("User_Id");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("IdNo")
-                        .IsUnique();
+                    b.HasKey("CustomerId");
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[User_Id] IS NOT NULL");
 
-                    b.ToTable("Customers", (string)null);
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Document", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("DocumentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Document_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentId"));
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Diger");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int?>("ClaimId")
                         .HasColumnType("int")
                         .HasColumnName("Claim_Id");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("Customer_Id");
 
@@ -266,7 +302,8 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Expires_At");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -279,12 +316,14 @@ namespace InsuranceAPI.Migrations
                     b.Property<string>("FileType")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .HasColumnName("File_Type");
 
                     b.Property<string>("FileUrl")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("File_Url");
 
                     b.Property<int?>("PolicyId")
                         .HasColumnType("int")
@@ -292,29 +331,30 @@ namespace InsuranceAPI.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Aktif");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
 
                     b.Property<DateTime>("UploadedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Uploaded_At");
 
-                    b.Property<int>("UploadedByUserId")
+                    b.Property<int?>("UploadedByUserId")
                         .HasColumnType("int")
                         .HasColumnName("Uploaded_By_User_Id");
 
-                    b.Property<string>("Version")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
-                        .HasDefaultValue("1.0");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Version")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("DocumentId");
 
                     b.HasIndex("ClaimId");
 
@@ -324,16 +364,19 @@ namespace InsuranceAPI.Migrations
 
                     b.HasIndex("UploadedByUserId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.InsuranceType", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("InsuranceTypeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Ins_Type_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("InsuranceTypeId"));
 
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18,2)");
@@ -344,24 +387,21 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("CoverageDetails")
-                        .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("nvarchar(2000)")
+                        .HasColumnName("Coverage_Details");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -369,72 +409,121 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
 
-                    b.HasIndex("Category");
+                    b.HasKey("InsuranceTypeId");
 
-                    b.HasIndex("IsActive");
-
-                    b.ToTable("InsuranceTypes", (string)null);
+                    b.ToTable("InsuranceTypes");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Offer", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("OfferId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Offer_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OfferId"));
 
-                    b.Property<int>("AgentId")
+                    b.Property<int?>("AgentId")
                         .HasColumnType("int")
                         .HasColumnName("Agent_Id");
 
+                    b.Property<string>("AgentNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Agent_Notes");
+
                     b.Property<decimal>("BasePrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Base_Price");
+
+                    b.Property<decimal?>("CoverageAmount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Coverage_Amount");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
-                    b.Property<int>("CustomerId")
+                    b.Property<string>("CustomerAdditionalInfo")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnName("Customer_Additional_Info");
+
+                    b.Property<DateTime?>("CustomerApprovedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Customer_Approved_At");
+
+                    b.Property<int?>("CustomerId")
                         .HasColumnType("int")
                         .HasColumnName("Customer_Id");
 
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<decimal>("DiscountRate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(5,2)")
-                        .HasDefaultValue(0m);
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Discount_Rate");
 
                     b.Property<decimal>("FinalPrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Final_Price");
 
-                    b.Property<int>("InsuranceTypeId")
+                    b.Property<int?>("InsuranceTypeId")
                         .HasColumnType("int")
                         .HasColumnName("Insurance_Type_Id");
 
+                    b.Property<bool>("IsCustomerApproved")
+                        .HasColumnType("bit")
+                        .HasColumnName("Is_Customer_Approved");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Processed_At");
+
+                    b.Property<DateTime?>("RequestedStartDate")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Requested_Start_Date");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Reviewed_At");
+
+                    b.Property<int?>("ReviewedByAgentId")
+                        .HasColumnType("int")
+                        .HasColumnName("Reviewed_By_Agent_Id");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("pending");
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
 
                     b.Property<DateTime>("ValidUntil")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Valid_Until");
 
-                    b.HasKey("Id");
+                    b.HasKey("OfferId");
 
                     b.HasIndex("AgentId");
 
@@ -442,107 +531,101 @@ namespace InsuranceAPI.Migrations
 
                     b.HasIndex("InsuranceTypeId");
 
-                    b.ToTable("Offers", (string)null);
+                    b.ToTable("Offers");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Payment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("PaymentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Payment_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PaymentId"));
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Amount");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
                     b.Property<string>("Method")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("KrediKarti");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime>("PaidAt")
-                        .ValueGeneratedOnAdd()
+                    b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Paid_At");
 
-                    b.Property<int>("PolicyId")
+                    b.Property<int?>("PolicyId")
                         .HasColumnType("int")
                         .HasColumnName("Policy_Id");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Beklemede");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("TransactionId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
+
+                    b.HasKey("PaymentId");
 
                     b.HasIndex("PolicyId");
 
-                    b.ToTable("Payments", (string)null);
+                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Policy", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("PolicyId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Policy_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PolicyId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Created_At");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("End_Date");
 
                     b.Property<string>("Notes")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<int>("OfferId")
+                    b.Property<int?>("OfferId")
                         .HasColumnType("int")
                         .HasColumnName("Offer_Id");
 
-                    b.Property<DateTime?>("PaidAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("PaymentStatus")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
                     b.Property<string>("PolicyNumber")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("Policy_Number");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Start_Date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -550,45 +633,49 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<decimal>("TotalPremium")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Total_Premium");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Updated_At");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
 
-                    b.HasIndex("OfferId")
-                        .IsUnique();
+                    b.HasKey("PolicyId");
 
-                    b.HasIndex("PolicyNumber")
-                        .IsUnique();
+                    b.HasIndex("OfferId");
 
-                    b.ToTable("Policies", (string)null);
+                    b.ToTable("Policies");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.SelectedCoverage", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("SelectedCoverageId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("Sel_Cov_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SelectedCoverageId"));
 
-                    b.Property<int>("CoverageId")
+                    b.Property<int?>("CoverageId")
                         .HasColumnType("int")
                         .HasColumnName("Coverage_Id");
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
                     b.Property<bool>("IsSelected")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(true);
+                        .HasColumnType("bit");
 
-                    b.Property<int>("OfferId")
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("OfferId")
                         .HasColumnType("int")
                         .HasColumnName("Offer_Id");
 
@@ -596,30 +683,74 @@ namespace InsuranceAPI.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("SelectedLimit")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("Selected_Limit");
 
-                    b.HasKey("Id");
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
+
+                    b.HasKey("SelectedCoverageId");
 
                     b.HasIndex("CoverageId");
 
                     b.HasIndex("OfferId");
 
-                    b.ToTable("SelectedCoverages", (string)null);
+                    b.ToTable("SelectedCoverages");
+                });
+
+            modelBuilder.Entity("InsuranceAPI.Models.TokenBlacklist", b =>
+                {
+                    b.Property<int>("TokenBlacklistId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("Token_black_Id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TokenBlacklistId"));
+
+                    b.Property<DateTime>("BlacklistedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Blacklisted_At");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Created_At");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("Expires_At");
+
+                    b.Property<string>("Reason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("UserEmail")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("User_Email");
+
+                    b.HasKey("TokenBlacklistId");
+
+                    b.ToTable("TokenBlacklist");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("User_Id");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
-                        .HasColumnName("Created_At")
-                        .HasDefaultValueSql("GETDATE()");
+                        .HasColumnName("Created_At");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -628,8 +759,8 @@ namespace InsuranceAPI.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -641,12 +772,9 @@ namespace InsuranceAPI.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Agent", b =>
@@ -654,32 +782,41 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.User", "User")
                         .WithOne("Agent")
                         .HasForeignKey("InsuranceAPI.Models.Agent", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Claim", b =>
                 {
+                    b.HasOne("InsuranceAPI.Models.Agent", "Agent")
+                        .WithMany("Claims")
+                        .HasForeignKey("AgentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("InsuranceAPI.Models.User", "CreatedByUser")
-                        .WithMany("ReportedClaims")
-                        .HasForeignKey("CreatedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId");
+
+                    b.HasOne("InsuranceAPI.Models.Customer", "Customer")
+                        .WithMany("Claims")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.Policy", "Policy")
-                        .WithMany("Claims")
+                        .WithMany()
                         .HasForeignKey("PolicyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.User", "ProcessedByUser")
-                        .WithMany("ProcessedClaims")
-                        .HasForeignKey("ProcessedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .WithMany()
+                        .HasForeignKey("ProcessedByUserId");
+
+                    b.Navigation("Agent");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Customer");
 
                     b.Navigation("Policy");
 
@@ -691,8 +828,7 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.InsuranceType", "InsuranceType")
                         .WithMany("Coverages")
                         .HasForeignKey("InsuranceTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("InsuranceType");
                 });
@@ -702,8 +838,7 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.User", "User")
                         .WithOne("Customer")
                         .HasForeignKey("InsuranceAPI.Models.Customer", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
                 });
@@ -711,26 +846,28 @@ namespace InsuranceAPI.Migrations
             modelBuilder.Entity("InsuranceAPI.Models.Document", b =>
                 {
                     b.HasOne("InsuranceAPI.Models.Claim", "Claim")
-                        .WithMany()
+                        .WithMany("Documents")
                         .HasForeignKey("ClaimId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.Customer", "Customer")
                         .WithMany("Documents")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.Policy", "Policy")
-                        .WithMany()
+                        .WithMany("Documents")
                         .HasForeignKey("PolicyId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.User", "UploadedByUser")
-                        .WithMany()
+                        .WithMany("Documents")
                         .HasForeignKey("UploadedByUserId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("InsuranceAPI.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Claim");
 
@@ -739,6 +876,8 @@ namespace InsuranceAPI.Migrations
                     b.Navigation("Policy");
 
                     b.Navigation("UploadedByUser");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Offer", b =>
@@ -746,20 +885,17 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.Agent", "Agent")
                         .WithMany("Offers")
                         .HasForeignKey("AgentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.Customer", "Customer")
                         .WithMany("Offers")
                         .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.InsuranceType", "InsuranceType")
                         .WithMany("Offers")
                         .HasForeignKey("InsuranceTypeId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Agent");
 
@@ -773,8 +909,7 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.Policy", "Policy")
                         .WithMany("Payments")
                         .HasForeignKey("PolicyId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Policy");
                 });
@@ -782,10 +917,9 @@ namespace InsuranceAPI.Migrations
             modelBuilder.Entity("InsuranceAPI.Models.Policy", b =>
                 {
                     b.HasOne("InsuranceAPI.Models.Offer", "Offer")
-                        .WithOne("Policy")
-                        .HasForeignKey("InsuranceAPI.Models.Policy", "OfferId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Policies")
+                        .HasForeignKey("OfferId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Offer");
                 });
@@ -795,14 +929,12 @@ namespace InsuranceAPI.Migrations
                     b.HasOne("InsuranceAPI.Models.Coverage", "Coverage")
                         .WithMany("SelectedCoverages")
                         .HasForeignKey("CoverageId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("InsuranceAPI.Models.Offer", "Offer")
                         .WithMany("SelectedCoverages")
                         .HasForeignKey("OfferId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Coverage");
 
@@ -811,7 +943,14 @@ namespace InsuranceAPI.Migrations
 
             modelBuilder.Entity("InsuranceAPI.Models.Agent", b =>
                 {
+                    b.Navigation("Claims");
+
                     b.Navigation("Offers");
+                });
+
+            modelBuilder.Entity("InsuranceAPI.Models.Claim", b =>
+                {
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Coverage", b =>
@@ -821,6 +960,8 @@ namespace InsuranceAPI.Migrations
 
             modelBuilder.Entity("InsuranceAPI.Models.Customer", b =>
                 {
+                    b.Navigation("Claims");
+
                     b.Navigation("Documents");
 
                     b.Navigation("Offers");
@@ -835,14 +976,14 @@ namespace InsuranceAPI.Migrations
 
             modelBuilder.Entity("InsuranceAPI.Models.Offer", b =>
                 {
-                    b.Navigation("Policy");
+                    b.Navigation("Policies");
 
                     b.Navigation("SelectedCoverages");
                 });
 
             modelBuilder.Entity("InsuranceAPI.Models.Policy", b =>
                 {
-                    b.Navigation("Claims");
+                    b.Navigation("Documents");
 
                     b.Navigation("Payments");
                 });
@@ -853,9 +994,7 @@ namespace InsuranceAPI.Migrations
 
                     b.Navigation("Customer");
 
-                    b.Navigation("ProcessedClaims");
-
-                    b.Navigation("ReportedClaims");
+                    b.Navigation("Documents");
                 });
 #pragma warning restore 612, 618
         }

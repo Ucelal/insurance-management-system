@@ -68,7 +68,7 @@ namespace InsuranceAPI.Services
                     Category = uploadDto.Category,
                     Description = uploadDto.Description,
                     Version = uploadDto.Version ?? "1.0",
-                    Status = DocumentStatus.Aktif,
+                    Status = "Aktif",
                     UploadedAt = DateTime.UtcNow,
                     ExpiresAt = uploadDto.ExpiresAt,
                     UploadedByUserId = uploadedByUserId
@@ -82,7 +82,7 @@ namespace InsuranceAPI.Services
                 // Return response
                 return new FileUploadResponseDto
                 {
-                    Id = document.Id,
+                    Id = document.DocumentId,
                     FileName = document.FileName,
                     FileUrl = document.FileUrl,
                     FileType = document.FileType,
@@ -113,7 +113,7 @@ namespace InsuranceAPI.Services
             {
                 var document = await _context.Documents
                     .Include(d => d.UploadedByUser)
-                    .FirstOrDefaultAsync(d => d.Id == documentId);
+                    .FirstOrDefaultAsync(d => d.DocumentId == documentId);
 
                 if (document == null)
                 {
@@ -193,10 +193,10 @@ namespace InsuranceAPI.Services
                     document.Description = updateDto.Description;
                 if (!string.IsNullOrEmpty(updateDto.Version))
                     document.Version = updateDto.Version;
-                if (updateDto.Category.HasValue)
-                    document.Category = updateDto.Category.Value;
-                if (updateDto.Status.HasValue)
-                    document.Status = updateDto.Status.Value;
+                if (!string.IsNullOrEmpty(updateDto.Category))
+                    document.Category = updateDto.Category;
+                if (!string.IsNullOrEmpty(updateDto.Status))
+                    document.Status = updateDto.Status;
                 if (updateDto.ExpiresAt.HasValue)
                     document.ExpiresAt = updateDto.ExpiresAt.Value;
 
@@ -207,8 +207,12 @@ namespace InsuranceAPI.Services
                 _logger.LogInformation("Document metadata updated for ID {Id}", documentId);
 
                 // Return updated document
-                return await GetFilesByCustomerAsync(document.CustomerId)
-                    .ContinueWith(t => t.Result.FirstOrDefault(d => d.Id == documentId));
+                if (document.CustomerId.HasValue)
+                {
+                    var files = await GetFilesByCustomerAsync(document.CustomerId.Value);
+                    return files.FirstOrDefault(d => d.Id == documentId);
+                }
+                return null;
             }
             catch (Exception ex)
             {
@@ -229,7 +233,7 @@ namespace InsuranceAPI.Services
 
                 return documents.Select(d => new FileUploadResponseDto
                 {
-                    Id = d.Id,
+                    Id = d.DocumentId,
                     FileName = d.FileName,
                     FileUrl = d.FileUrl,
                     FileType = d.FileType,
@@ -266,7 +270,7 @@ namespace InsuranceAPI.Services
 
                 return documents.Select(d => new FileUploadResponseDto
                 {
-                    Id = d.Id,
+                    Id = d.DocumentId,
                     FileName = d.FileName,
                     FileUrl = d.FileUrl,
                     FileType = d.FileType,
@@ -303,7 +307,7 @@ namespace InsuranceAPI.Services
 
                 return documents.Select(d => new FileUploadResponseDto
                 {
-                    Id = d.Id,
+                    Id = d.DocumentId,
                     FileName = d.FileName,
                     FileUrl = d.FileUrl,
                     FileType = d.FileType,
@@ -343,7 +347,7 @@ namespace InsuranceAPI.Services
                 {
                     var customer = await _context.Customers
                         .Include(c => c.User)
-                        .FirstOrDefaultAsync(c => c.Id == document.CustomerId);
+                        .FirstOrDefaultAsync(c => c.CustomerId == document.CustomerId);
                     
                     if (customer?.User != null)
                     {
@@ -365,7 +369,7 @@ namespace InsuranceAPI.Services
                     var customer = await _context.Customers
                         .FirstOrDefaultAsync(c => c.UserId == userId);
                     
-                    return customer?.Id == document.CustomerId;
+                    return customer?.CustomerId == document.CustomerId;
                 }
 
                 return false;

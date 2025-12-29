@@ -40,7 +40,7 @@ namespace InsuranceAPI.Controllers
         {
             var insuranceType = await _context.InsuranceTypes
                 .Include(it => it.Coverages)
-                .FirstOrDefaultAsync(it => it.Id == id && it.IsActive);
+                .FirstOrDefaultAsync(it => it.UserId == id && it.IsActive);
                 
             if (insuranceType == null)
             {
@@ -90,9 +90,9 @@ namespace InsuranceAPI.Controllers
             
             var createdType = await _context.InsuranceTypes
                 .Include(it => it.Coverages)
-                .FirstOrDefaultAsync(it => it.Id == insuranceType.Id);
+                .FirstOrDefaultAsync(it => it.UserId == insuranceType.UserId);
                 
-            return CreatedAtAction(nameof(GetInsuranceTypeById), new { id = insuranceType.Id }, MapToDto(createdType!));
+            return CreatedAtAction(nameof(GetInsuranceTypeById), new { id = insuranceType.UserId }, MapToDto(createdType!));
         }
         
         // Sigorta türü güncelle (sadece admin)
@@ -131,9 +131,14 @@ namespace InsuranceAPI.Controllers
             
             var updatedType = await _context.InsuranceTypes
                 .Include(it => it.Coverages)
-                .FirstOrDefaultAsync(it => it.Id == id);
+                .FirstOrDefaultAsync(it => it.InsuranceTypeId == id);
                 
-            return Ok(MapToDto(updatedType!));
+            if (updatedType == null)
+            {
+                return NotFound(new { message = "Sigorta türü bulunamadı" });
+            }
+                
+            return Ok(MapToDto(updatedType));
         }
         
         // Sigorta türü sil (sadece admin) - soft delete
@@ -198,20 +203,20 @@ namespace InsuranceAPI.Controllers
         {
             return new InsuranceTypeDto
             {
-                Id = insuranceType.Id,
-                Name = insuranceType.Name,
-                Category = insuranceType.Category,
-                Description = insuranceType.Description,
+                Id = insuranceType.InsuranceTypeId,
+                Name = insuranceType.Name ?? string.Empty,
+                Category = insuranceType.Category ?? string.Empty,
+                Description = insuranceType.Description ?? string.Empty,
                 IsActive = insuranceType.IsActive,
                 BasePrice = insuranceType.BasePrice,
-                CoverageDetails = insuranceType.CoverageDetails,
+                CoverageDetails = insuranceType.CoverageDetails ?? string.Empty,
                 CreatedAt = insuranceType.CreatedAt,
                 UpdatedAt = insuranceType.UpdatedAt,
                 Coverages = insuranceType.Coverages?.Select(c => new CoverageDto
                 {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description,
+                    Id = c.CoverageId,
+                    Name = c.Name ?? string.Empty,
+                    Description = c.Description ?? string.Empty,
                     Limit = c.Limit,
                     Premium = c.Premium,
                     IsOptional = c.IsOptional,

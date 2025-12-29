@@ -4,17 +4,18 @@ namespace InsuranceAPI.DTOs
 {
     public class PaymentDto
     {
-        public int Id { get; set; }
-        public int PolicyId { get; set; }
+        public int PaymentId { get; set; }
+        public int? PolicyId { get; set; }
         public string PolicyNumber { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public DateTime PaidAt { get; set; }
+        public DateTime? PaidAt { get; set; }
         public string Method { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string? TransactionId { get; set; }
         public string? Notes { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public int? UserId { get; set; }
         public PolicyDto? Policy { get; set; }
     }
 

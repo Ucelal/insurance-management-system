@@ -40,7 +40,7 @@ namespace InsuranceAPI.Controllers
         {
             var coverage = await _context.Coverages
                 .Include(c => c.InsuranceType)
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
+                .FirstOrDefaultAsync(c => c.UserId == id && c.IsActive);
                 
             if (coverage == null)
             {
@@ -98,9 +98,9 @@ namespace InsuranceAPI.Controllers
             
             var createdCoverage = await _context.Coverages
                 .Include(c => c.InsuranceType)
-                .FirstOrDefaultAsync(c => c.Id == coverage.Id);
+                .FirstOrDefaultAsync(c => c.UserId == coverage.UserId);
                 
-            return CreatedAtAction(nameof(GetCoverageById), new { id = coverage.Id }, MapToDto(createdCoverage!));
+            return CreatedAtAction(nameof(GetCoverageById), new { id = coverage.UserId }, MapToDto(createdCoverage!));
         }
         
         // Teminat güncelle (sadece admin)
@@ -150,7 +150,7 @@ namespace InsuranceAPI.Controllers
             
             var updatedCoverage = await _context.Coverages
                 .Include(c => c.InsuranceType)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.UserId == id);
                 
             return Ok(MapToDto(updatedCoverage!));
         }
@@ -192,7 +192,7 @@ namespace InsuranceAPI.Controllers
                 query = query.Where(c => c.InsuranceTypeId == insuranceTypeId.Value);
             }
             
-            var coverages = await query.OrderBy(c => c.InsuranceType.Category).ThenBy(c => c.Name).ToListAsync();
+            var coverages = await query.OrderBy(c => c.InsuranceType!.Category).ThenBy(c => c.Name).ToListAsync();
             var dtos = coverages.Select(MapToDto).ToList();
             
             return Ok(dtos);
@@ -233,7 +233,7 @@ namespace InsuranceAPI.Controllers
         {
             return new CoverageDto
             {
-                Id = coverage.Id,
+                Id = coverage.CoverageId,
                 Name = coverage.Name,
                 Description = coverage.Description,
                 Limit = coverage.Limit,
@@ -245,13 +245,13 @@ namespace InsuranceAPI.Controllers
                 UpdatedAt = coverage.UpdatedAt,
                 InsuranceType = coverage.InsuranceType != null ? new InsuranceTypeDto
                 {
-                    Id = coverage.InsuranceType.Id,
-                    Name = coverage.InsuranceType.Name,
-                    Category = coverage.InsuranceType.Category,
-                    Description = coverage.InsuranceType.Description,
+                    Id = coverage.InsuranceType.InsuranceTypeId,
+                    Name = coverage.InsuranceType.Name ?? string.Empty,
+                    Category = coverage.InsuranceType.Category ?? string.Empty,
+                    Description = coverage.InsuranceType.Description ?? string.Empty,
                     IsActive = coverage.InsuranceType.IsActive,
                     BasePrice = coverage.InsuranceType.BasePrice,
-                    CoverageDetails = coverage.InsuranceType.CoverageDetails,
+                    CoverageDetails = coverage.InsuranceType.CoverageDetails ?? string.Empty,
                     CreatedAt = coverage.InsuranceType.CreatedAt,
                     UpdatedAt = coverage.InsuranceType.UpdatedAt
                 } : null

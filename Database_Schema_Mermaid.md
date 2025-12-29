@@ -6,27 +6,27 @@
 erDiagram
     %% Core User Management
     Users {
-        int Id PK
+        int User_Id PK
         string Name
         string Role
         string Email UK
         string PasswordHash
-        datetime CreatedAt
+        datetime Created_At
     }
 
     %% Customer & Agent Management
     Customers {
-        int Id PK
-        int UserId FK
+        int Customer_Id PK
+        int User_Id FK
         string Type
-        string IdNo UK
+        string Id_No UK
         string Address
         string Phone
     }
 
     Agents {
-        int Id PK
-        int UserId FK
+        int Agent_Id PK
+        int User_Id FK
         string AgentCode UK
         string Department
         string Address
@@ -35,7 +35,7 @@ erDiagram
 
     %% Insurance Types & Coverage
     InsuranceTypes {
-        int Id PK
+        int Ins_Type_Id PK
         string Name
         string Category
         string Description
@@ -47,37 +47,44 @@ erDiagram
     }
 
     Coverages {
-        int Id PK
+        int Coverage_Id PK
         string Name
         string Description
-        decimal Limit
-        decimal Premium
-        boolean IsOptional
+        string Type
+        decimal BasePremium
         boolean IsActive
-        int InsuranceTypeId FK
         datetime CreatedAt
         datetime UpdatedAt
     }
 
     %% Business Logic
     Offers {
-        int Id PK
-        int CustomerId FK
-        int AgentId FK
-        int InsuranceTypeId FK
+        int Offer_Id PK
+        int Customer_Id FK
+        int Agent_Id FK
+        int Insurance_Type_Id FK
         string Description
         decimal BasePrice
         decimal DiscountRate
         decimal FinalPrice
         string Status
+        string Department
+        string CustomerAdditionalInfo
+        string AgentNotes
+        decimal CoverageAmount
+        datetime RequestedStartDate
         datetime ValidUntil
+        boolean IsCustomerApproved
+        datetime CustomerApprovedAt
+        datetime ReviewedAt
+        int ReviewedByAgentId
         datetime CreatedAt
         datetime UpdatedAt
     }
 
     Policies {
-        int Id PK
-        int OfferId FK
+        int Policy_Id PK
+        int Offer_Id FK
         string PolicyNumber UK
         datetime StartDate
         datetime EndDate
@@ -92,14 +99,14 @@ erDiagram
     }
 
     Claims {
-        int Id PK
-        int PolicyId FK
-        int CreatedByUserId FK
-        int ProcessedByUserId FK
+        int Claim_Id PK
+        int Policy_Id FK
+        int Customer_Id FK
+        int Agent_Id FK
         string Description
-        enum Status
-        enum Type
-        enum Priority
+        string Status
+        string Type
+        string Priority
         decimal ClaimAmount
         decimal ApprovedAmount
         datetime EstimatedResolutionDate
@@ -109,12 +116,12 @@ erDiagram
     }
 
     Payments {
-        int Id PK
-        int PolicyId FK
+        int Payment_Id PK
+        int Policy_Id FK
         decimal Amount
         datetime PaidAt
-        enum Method
-        enum Status
+        string Method
+        string Status
         string TransactionId
         string Notes
         datetime CreatedAt
@@ -123,46 +130,50 @@ erDiagram
 
     %% File Management
     Documents {
-        int Id PK
-        int CustomerId FK
-        int ClaimId FK
-        int PolicyId FK
+        int Document_Id PK
+        int Customer_Id FK
+        int Claim_Id FK
+        int Policy_Id FK
         string FileName
         string FileUrl
         string FileType
         long FileSize
-        enum Category
-        enum Status
+        string Category
+        string Status
         string Description
         string Version
         datetime UploadedAt
         datetime UpdatedAt
         datetime ExpiresAt
-        int UploadedByUserId FK
+        int UploadedByUser_Id FK
     }
 
     %% Junction Tables
     SelectedCoverages {
-        int Id PK
-        int OfferId FK
-        int CoverageId FK
-        decimal SelectedLimit
-        decimal Premium
-        boolean IsSelected
+        int Sel_Cov_Id PK
+        int Offer_Id FK
+        int Coverage_Id FK
+        string Notes
+    }
+
+    %% Token Management
+    TokenBlacklist {
+        int Token_black_Id PK
+        string Token
         datetime CreatedAt
     }
 
     %% Relationships
     Users ||--o{ Customers : "has"
     Users ||--o{ Agents : "has"
-    Users ||--o{ Claims : "reports"
-    Users ||--o{ Claims : "processes"
     Users ||--o{ Documents : "uploads"
 
     Customers ||--o{ Offers : "receives"
     Customers ||--o{ Documents : "owns"
+    Customers ||--o{ Claims : "reports"
 
     Agents ||--o{ Offers : "creates"
+    Agents ||--o{ Claims : "processes"
 
     InsuranceTypes ||--o{ Coverages : "contains"
     InsuranceTypes ||--o{ Offers : "offers"

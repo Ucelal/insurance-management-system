@@ -29,7 +29,7 @@ namespace InsuranceAPI.Services
         {
             var payment = await _context.Payments
                 .Include(p => p.Policy)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.UserId == id);
 
             return payment != null ? MapToDto(payment) : null;
         }
@@ -47,18 +47,13 @@ namespace InsuranceAPI.Services
 
         public async Task<List<PaymentDto>> GetPaymentsByStatusAsync(string status)
         {
-            if (Enum.TryParse<PaymentStatus>(status, true, out var paymentStatus))
-            {
-                var payments = await _context.Payments
-                    .Include(p => p.Policy)
-                    .Where(p => p.Status == paymentStatus)
-                    .OrderByDescending(p => p.CreatedAt)
-                    .ToListAsync();
+            var payments = await _context.Payments
+                .Include(p => p.Policy)
+                .Where(p => p.Status == status)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
 
-                return payments.Select(MapToDto).ToList();
-            }
-
-            return new List<PaymentDto>();
+            return payments.Select(MapToDto).ToList();
         }
 
         public async Task<PaymentDto> CreatePaymentAsync(CreatePaymentDto createDto)
@@ -68,16 +63,12 @@ namespace InsuranceAPI.Services
             if (policy == null)
                 throw new ArgumentException("Poliçe bulunamadı");
 
-            // Ödeme yöntemini parse et
-            if (!Enum.TryParse<PaymentMethod>(createDto.Method, true, out var paymentMethod))
-                throw new ArgumentException("Geçersiz ödeme yöntemi");
-
             var payment = new Payment
             {
                 PolicyId = createDto.PolicyId,
                 Amount = createDto.Amount,
-                Method = paymentMethod,
-                Status = PaymentStatus.Beklemede,
+                Method = createDto.Method,
+                Status = "Beklemede",
                 Notes = createDto.Notes,
                 CreatedAt = DateTime.UtcNow
             };
@@ -98,10 +89,7 @@ namespace InsuranceAPI.Services
 
             if (!string.IsNullOrEmpty(updateDto.Status))
             {
-                if (Enum.TryParse<PaymentStatus>(updateDto.Status, true, out var status))
-                    payment.Status = status;
-                else
-                    throw new ArgumentException("Geçersiz ödeme durumu");
+                payment.Status = updateDto.Status;
             }
 
             payment.TransactionId = updateDto.TransactionId ?? payment.TransactionId;
@@ -132,17 +120,13 @@ namespace InsuranceAPI.Services
             if (payment == null)
                 throw new ArgumentException("Ödeme bulunamadı");
 
-            if (Enum.TryParse<PaymentStatus>(processDto.Status, true, out var status))
-                payment.Status = status;
-            else
-                throw new ArgumentException("Geçersiz ödeme durumu");
-
+            payment.Status = processDto.Status;
             payment.TransactionId = processDto.TransactionId ?? payment.TransactionId;
             payment.Notes = processDto.Notes ?? payment.Notes;
             payment.UpdatedAt = DateTime.UtcNow;
 
             // Eğer ödeme başarılıysa, ödeme tarihini güncelle
-            if (status == PaymentStatus.Basarili)
+            if (processDto.Status == "Basarili")
                 payment.PaidAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -159,11 +143,11 @@ namespace InsuranceAPI.Services
             var statistics = new PaymentStatisticsDto
             {
                 TotalPayments = payments.Count,
-                SuccessfulPayments = payments.Count(p => p.Status == PaymentStatus.Basarili),
-                PendingPayments = payments.Count(p => p.Status == PaymentStatus.Beklemede),
-                FailedPayments = payments.Count(p => p.Status == PaymentStatus.Basarisiz),
+                SuccessfulPayments = payments.Count(p => p.Status == "Basarili"),
+                PendingPayments = payments.Count(p => p.Status == "Beklemede"),
+                FailedPayments = payments.Count(p => p.Status == "Basarisiz"),
                 TotalAmount = payments.Sum(p => p.Amount),
-                SuccessfulAmount = payments.Where(p => p.Status == PaymentStatus.Basarili).Sum(p => p.Amount)
+                SuccessfulAmount = payments.Where(p => p.Status == "Basarili").Sum(p => p.Amount)
             };
 
             // Ödeme yöntemine göre grupla
@@ -178,8 +162,8 @@ namespace InsuranceAPI.Services
 
             // Aylık gelir
             statistics.RevenueByMonth = payments
-                .Where(p => p.Status == PaymentStatus.Basarili)
-                .GroupBy(p => p.PaidAt.ToString("yyyy-MM"))
+                .Where(p => p.Status == "Basarili" && p.PaidAt.HasValue)
+                .GroupBy(p => p.PaidAt!.Value.ToString("yyyy-MM"))
                 .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
             return statistics;
@@ -191,14 +175,12 @@ namespace InsuranceAPI.Services
 
             if (!string.IsNullOrEmpty(searchDto.Status))
             {
-                if (Enum.TryParse<PaymentStatus>(searchDto.Status, true, out var status))
-                    query = query.Where(p => p.Status == status);
+                query = query.Where(p => p.Status == searchDto.Status);
             }
 
             if (!string.IsNullOrEmpty(searchDto.Method))
             {
-                if (Enum.TryParse<PaymentMethod>(searchDto.Method, true, out var method))
-                    query = query.Where(p => p.Method == method);
+                query = query.Where(p => p.Method == searchDto.Method);
             }
 
             if (searchDto.PolicyId.HasValue)
@@ -249,27 +231,27 @@ namespace InsuranceAPI.Services
                 Notes = "Simüle edilmiş ödeme"
             };
 
-            return await UpdatePaymentAsync(payment.Id, updateDto);
+            return await UpdatePaymentAsync(payment.PaymentId, updateDto);
         }
 
         private static PaymentDto MapToDto(Payment payment)
         {
             return new PaymentDto
             {
-                Id = payment.Id,
+                PaymentId = payment.PaymentId,
                 PolicyId = payment.PolicyId,
                 PolicyNumber = payment.Policy?.PolicyNumber ?? string.Empty,
                 Amount = payment.Amount,
                 PaidAt = payment.PaidAt,
-                Method = payment.Method.ToString(),
-                Status = payment.Status.ToString(),
+                Method = payment.Method,
+                Status = payment.Status,
                 TransactionId = payment.TransactionId,
                 Notes = payment.Notes,
                 CreatedAt = payment.CreatedAt,
                 UpdatedAt = payment.UpdatedAt,
                 Policy = payment.Policy != null ? new PolicyDto
                 {
-                    Id = payment.Policy.Id,
+                    PolicyId = payment.Policy.PolicyId,
                     PolicyNumber = payment.Policy.PolicyNumber,
                     StartDate = payment.Policy.StartDate,
                     EndDate = payment.Policy.EndDate,

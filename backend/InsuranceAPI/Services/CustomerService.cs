@@ -21,7 +21,7 @@ namespace InsuranceAPI.Services
         {
             var customers = await _context.Customers
                 .Include(c => c.User)
-                .OrderBy(c => c.Id)
+                .OrderBy(c => c.CustomerId)
                 .ToListAsync();
                 
             return customers.Select(MapToDto).ToList();
@@ -32,7 +32,7 @@ namespace InsuranceAPI.Services
         {
             var customer = await _context.Customers
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
                 
             return customer != null ? MapToDto(customer) : null;
         }
@@ -50,7 +50,6 @@ namespace InsuranceAPI.Services
             
             var customer = new Customer
             {
-                Type = createCustomerDto.Type,
                 IdNo = createCustomerDto.IdNo,
                 Address = createCustomerDto.Address,
                 Phone = createCustomerDto.Phone,
@@ -63,7 +62,7 @@ namespace InsuranceAPI.Services
             // Oluşturulan müşteriyi User bilgisiyle birlikte getir
             var createdCustomer = await _context.Customers
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == customer.Id);
+                .FirstOrDefaultAsync(c => c.CustomerId == customer.CustomerId);
                 
             return createdCustomer != null ? MapToDto(createdCustomer) : null;
         }
@@ -71,31 +70,70 @@ namespace InsuranceAPI.Services
         // Müşteri güncelle
         public async Task<CustomerDto?> UpdateCustomerAsync(int id, UpdateCustomerDto updateCustomerDto)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
             
             if (customer == null)
             {
                 return null;
             }
             
+            // Update User fields if provided
+            if (customer.User != null)
+            {
+                if (!string.IsNullOrEmpty(updateCustomerDto.Name))
+                {
+                    customer.User.Name = updateCustomerDto.Name;
+                    Console.WriteLine($"Updated customer user name to '{updateCustomerDto.Name}'");
+                }
+                
+                if (!string.IsNullOrEmpty(updateCustomerDto.Email))
+                {
+                    // Only check if email is unique if it's actually changing
+                    if (customer.User.Email != updateCustomerDto.Email)
+                    {
+                        var emailExists = await _context.Users
+                            .AnyAsync(u => u.Email == updateCustomerDto.Email && u.UserId != customer.UserId);
+                        if (emailExists)
+                        {
+                            throw new InvalidOperationException($"Email '{updateCustomerDto.Email}' is already in use.");
+                        }
+                        customer.User.Email = updateCustomerDto.Email;
+                        Console.WriteLine($"Updated customer user email to '{updateCustomerDto.Email}'");
+                    }
+                }
+                
+                if (!string.IsNullOrEmpty(updateCustomerDto.Password))
+                {
+                    customer.User.PasswordHash = BCrypt.Net.BCrypt.HashPassword(updateCustomerDto.Password);
+                    Console.WriteLine("Updated customer user password");
+                }
+            }
+            
+            // Update Customer fields if provided
+            if (!string.IsNullOrEmpty(updateCustomerDto.IdNo))
+            {
             // ID No değişmişse kontrol et
             if (customer.IdNo != updateCustomerDto.IdNo && await IsIdNoExistsAsync(updateCustomerDto.IdNo))
             {
-                return null;
+                    throw new InvalidOperationException($"ID No '{updateCustomerDto.IdNo}' is already in use.");
+                }
+                customer.IdNo = updateCustomerDto.IdNo;
             }
             
-            customer.Type = updateCustomerDto.Type;
-            customer.IdNo = updateCustomerDto.IdNo;
+            if (!string.IsNullOrEmpty(updateCustomerDto.Address))
             customer.Address = updateCustomerDto.Address;
+                
+            if (!string.IsNullOrEmpty(updateCustomerDto.Phone))
             customer.Phone = updateCustomerDto.Phone;
-            customer.UserId = updateCustomerDto.UserId;
             
             await _context.SaveChangesAsync();
             
             // Güncellenmiş müşteriyi User bilgisiyle birlikte getir
             var updatedCustomer = await _context.Customers
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
                 
             return updatedCustomer != null ? MapToDto(updatedCustomer) : null;
         }
@@ -103,15 +141,32 @@ namespace InsuranceAPI.Services
         // Müşteri sil
         public async Task<bool> DeleteCustomerAsync(int id)
         {
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.CustomerId == id);
             
             if (customer == null)
             {
                 return false;
             }
             
+            // Store the user ID before deleting the customer
+            var userId = customer.UserId;
+            
+            // Delete the customer first
             _context.Customers.Remove(customer);
             await _context.SaveChangesAsync();
+            
+            // Delete the associated user if exists
+            if (userId.HasValue)
+            {
+                var user = await _context.Users.FindAsync(userId.Value);
+                if (user != null)
+                {
+                    _context.Users.Remove(user);
+                    await _context.SaveChangesAsync();
+                }
+            }
             
             return true;
         }
@@ -126,17 +181,12 @@ namespace InsuranceAPI.Services
                 query = query.Where(c => c.User != null && c.User.Name.Contains(name));
             }
             
-            if (!string.IsNullOrEmpty(type))
-            {
-                query = query.Where(c => c.Type == type);
-            }
-            
             if (!string.IsNullOrEmpty(idNo))
             {
                 query = query.Where(c => c.IdNo.Contains(idNo));
             }
             
-            var customers = await query.OrderBy(c => c.Id).ToListAsync();
+            var customers = await query.OrderBy(c => c.CustomerId).ToListAsync();
             
             return customers.Select(MapToDto).ToList();
         }
@@ -147,20 +197,83 @@ namespace InsuranceAPI.Services
             return await _context.Customers.AnyAsync(c => c.IdNo == idNo);
         }
         
+        // Departman bazlı müşterileri getir (Agent için)
+        public async Task<List<CustomerDto>> GetCustomersByDepartmentAsync(string department)
+        {
+            var customers = await _context.Customers
+                .Include(c => c.User)
+                .Include(c => c.Offers)
+                    .ThenInclude(o => o.Agent)
+                .Where(c => c.Offers != null && c.Offers.Any(o => o.Agent != null && o.Agent.Department == department))
+                .OrderBy(c => c.CustomerId)
+                .ToListAsync();
+                
+            return customers.Select(MapToDto).ToList();
+        }
+        
+        // Agent'ın departmanına göre müşterileri getir
+        public async Task<List<CustomerDto>> GetCustomersByAgentDepartmentAsync(int agentId)
+        {
+            try
+            {
+                Console.WriteLine($"CustomerService.GetCustomersByAgentDepartmentAsync - AgentId: {agentId}");
+                
+                var agent = await _context.Agents.FindAsync(agentId);
+                if (agent == null)
+                {
+                    Console.WriteLine($"Agent bulunamadı: {agentId}");
+                    return new List<CustomerDto>();
+                }
+                
+                Console.WriteLine($"Agent bulundu: {agent.User?.Name ?? "İsimsiz"}, Departman: {agent.Department}");
+                
+                var customers = await _context.Customers
+                    .Include(c => c.User)
+                    .Include(c => c.Offers)
+                        .ThenInclude(o => o.Agent)
+                            .ThenInclude(a => a.User)
+                    .Where(c => c.Offers != null && c.Offers.Any(o => o.Agent != null && o.Agent.Department == agent.Department))
+                    .OrderBy(c => c.CustomerId)
+                    .ToListAsync();
+                
+                Console.WriteLine($"Departman '{agent.Department}' için {customers.Count} müşteri bulundu");
+                
+                var result = customers.Select(MapToDto).ToList();
+                Console.WriteLine($"DTO'ya dönüştürüldü: {result.Count} müşteri");
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"CustomerService.GetCustomersByAgentDepartmentAsync - Hata: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                throw;
+            }
+        }
+        
+        // User ID'ye göre müşteri getir
+        public async Task<CustomerDto?> GetCustomerByUserIdAsync(int userId)
+        {
+            var customer = await _context.Customers
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.UserId == userId);
+                
+            return customer != null ? MapToDto(customer) : null;
+        }
+        
         // Customer entity'sini CustomerDto'ya dönüştür
         private static CustomerDto MapToDto(Customer customer)
         {
             return new CustomerDto
             {
-                Id = customer.Id,
+                CustomerId = customer.CustomerId,
                 UserId = customer.UserId,
-                Type = customer.Type,
                 IdNo = customer.IdNo,
                 Address = customer.Address,
                 Phone = customer.Phone,
                 User = customer.User != null ? new UserDto
                 {
-                    Id = customer.User.Id,
+                    Id = customer.User.UserId,
                     Name = customer.User.Name,
                     Email = customer.User.Email,
                     Role = customer.User.Role,
@@ -173,18 +286,11 @@ namespace InsuranceAPI.Services
         public async Task<CustomerStatisticsDto> GetCustomerStatisticsAsync()
         {
             var totalCustomers = await _context.Customers.CountAsync();
-            var individualCustomers = await _context.Customers.CountAsync(c => c.Type == "bireysel");
-            var corporateCustomers = await _context.Customers.CountAsync(c => c.Type == "kurumsal");
-            
-            var customersByType = await _context.Customers
-                .GroupBy(c => c.Type)
-                .Select(g => new { Type = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(x => x.Type, x => x.Count);
                 
             var customersByMonth = await _context.Customers
                 .Include(c => c.User)
                 .Where(c => c.User != null)
-                .GroupBy(c => new { Month = c.User!.CreatedAt.Month, Year = c.User!.CreatedAt.Year })
+                .GroupBy(c => new { Month = c.User.CreatedAt.Month, Year = c.User.CreatedAt.Year })
                 .Select(g => new { Year = g.Key.Year, Month = g.Key.Month, Count = g.Count() })
                 .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .ToListAsync();
@@ -198,38 +304,19 @@ namespace InsuranceAPI.Services
             return new CustomerStatisticsDto
             {
                 TotalCustomers = totalCustomers,
-                IndividualCustomers = individualCustomers,
-                CorporateCustomers = corporateCustomers,
                 ActiveCustomers = totalCustomers, // Basit implementasyon
                 InactiveCustomers = 0,
-                CustomersByType = customersByType,
                 CustomersByMonth = customersByMonthDict
             };
         }
         
-        // Müşterileri gruplandır
-        public async Task<object> GetCustomersGroupedAsync()
-        {
-            var grouped = await _context.Customers
-                .Include(c => c.User)
-                .GroupBy(c => c.Type)
-                .Select(g => new
-                {
-                    Type = g.Key,
-                    Count = g.Count(),
-                    Customers = g.Select(c => MapToDto(c)).ToList()
-                })
-                .ToListAsync();
-                
-            return grouped;
-        }
         
         // Müşteri aktivite geçmişi (basit implementasyon)
         public async Task<List<CustomerActivityDto>> GetCustomerActivityAsync(int customerId)
         {
             var customer = await _context.Customers
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == customerId);
+                .FirstOrDefaultAsync(c => c.CustomerId == customerId);
                 
             if (customer == null)
             {
@@ -240,7 +327,7 @@ namespace InsuranceAPI.Services
             {
                 new CustomerActivityDto
                 {
-                    Id = 1,
+                    CustomerId = 1,
                     Action = "Kayıt",
                     Description = $"Müşteri {customer.User?.Name} sisteme kayıt oldu",
                     Timestamp = customer.User?.CreatedAt ?? DateTime.UtcNow,
@@ -258,18 +345,17 @@ namespace InsuranceAPI.Services
             
             foreach (var update in updates)
             {
-                var customer = await _context.Customers.FindAsync(update.Id);
+                var customer = await _context.Customers.FindAsync(update.CustomerId);
                 if (customer != null)
                 {
-                    if (!string.IsNullOrEmpty(update.Type)) customer.Type = update.Type;
-                    if (!string.IsNullOrEmpty(update.Address)) customer.Address = update.Address;
                     if (!string.IsNullOrEmpty(update.Phone)) customer.Phone = update.Phone;
+                    if (!string.IsNullOrEmpty(update.Address)) customer.Address = update.Address;
                     
-                    results.Add(new { Id = update.Id, Status = "Updated", Customer = MapToDto(customer) });
+                    results.Add(new { Id = update.CustomerId, Status = "Updated", Customer = MapToDto(customer) });
                 }
                 else
                 {
-                    results.Add(new { Id = update.Id, Status = "Not Found" });
+                    results.Add(new { Id = update.CustomerId, Status = "Not Found" });
                 }
             }
             
@@ -286,14 +372,13 @@ namespace InsuranceAPI.Services
                 
             if (format?.ToLower() == "csv")
             {
-                var csv = "Id,UserId,Name,Email,Type,IdNo,Address,Phone,CreatedAt\n";
+                var csv = "Id,UserId,Name,Email,IdNo,Address,Phone,CreatedAt\n";
                 
                 foreach (var customer in customers)
                 {
-                    csv += $"{customer.Id},{customer.UserId}," +
+                    csv += $"{customer.CustomerId},{customer.UserId}," +
                            $"\"{customer.User?.Name?.Replace("\"", "\"\"")}\"," +
                            $"\"{customer.User?.Email}\"," +
-                           $"\"{customer.Type}\"," +
                            $"\"{customer.IdNo}\"," +
                            $"\"{customer.Address}\"," +
                            $"\"{customer.Phone}\"," +
@@ -322,14 +407,13 @@ namespace InsuranceAPI.Services
                 try
                 {
                     var values = line.Split(',');
-                    if (values.Length >= 4)
+                    if (values.Length >= 3)
                     {
                         var customer = new Customer
                         {
-                            Type = values[0].Trim('"'),
-                            IdNo = values[1].Trim('"'),
-                            Address = values[2].Trim('"'),
-                            Phone = values[3].Trim('"')
+                            IdNo = values[0].Trim('"'),
+                            Address = values[1].Trim('"'),
+                            Phone = values[2].Trim('"')
                         };
                         
                         _context.Customers.Add(customer);

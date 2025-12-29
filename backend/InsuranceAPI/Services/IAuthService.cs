@@ -14,6 +14,9 @@ namespace InsuranceAPI.Services
         // Agent kayıt işlemi - özel validasyon ve iş mantığı
         Task<AuthResponseDto?> RegisterAgentAsync(AgentRegisterDto agentRegisterDto);
         
+        // Admin kayıt işlemi - özel validasyon ve iş mantığı
+        Task<AuthResponseDto?> RegisterAdminAsync(AdminRegisterDto adminRegisterDto);
+        
         Task<bool> ValidateTokenAsync(string token);
         Task<UserDto?> GetUserFromTokenAsync(string token);
         Task<User?> GetUserByEmailAsync(string email);

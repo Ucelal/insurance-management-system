@@ -1,105 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './components/Login';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import HomePage from './components/HomePage';
+import CustomerLogin from './components/CustomerLogin';
+import CustomerRegister from './components/CustomerRegister';
+
+
+import AdminDashboard from './components/AdminDashboard';
+import AgentDashboard from './components/AgentDashboard';
+import CustomerDashboard from './components/CustomerDashboard';
+import InsuranceAgencies from './components/InsuranceAgencies';
+import ServicesPage from './components/ServicesPage';
+import QuotePage from './components/QuotePage';
+import ApiTest from './components/ApiTest';
 import './App.css';
 
-// Theme toggle component
-const ThemeToggle: React.FC = () => {
-  const [isDark, setIsDark] = useState(false);
+// Router refresh fix component
+const RouterRefreshFix: React.FC = () => {
+  const location = useLocation();
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'dark') {
-      setIsDark(true);
-      document.documentElement.setAttribute('data-theme', 'dark');
-    }
-  }, []);
+    // Store current path in localStorage for refresh recovery
+    localStorage.setItem('currentPath', location.pathname);
+  }, [location]);
 
-  const toggleTheme = () => {
-    const newTheme = isDark ? 'light' : 'dark';
-    setIsDark(!isDark);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.setAttribute('data-theme', newTheme);
-  };
+  return null;
+};
 
+function App() {
   return (
-    <button 
-      onClick={toggleTheme}
-      className="theme-toggle"
-      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-    >
-      {isDark ? '☀️' : '🌙'}
-    </button>
+    <ThemeProvider>
+      <AuthProvider>
+        <Router basename="/">
+          <RouterRefreshFix />
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/customer-login" element={<CustomerLogin />} />
+              <Route path="/customer-register" element={<CustomerRegister />} />
+
+
+              <Route path="/customer-dashboard" element={<CustomerDashboard />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/agent-dashboard" element={<AgentDashboard />} />
+              <Route path="/insurance-agencies" element={<InsuranceAgencies />} />
+              <Route path="/services/:serviceId" element={<ServicesPage />} />
+              <Route path="/quote" element={<QuotePage />} />
+              <Route path="/api-test" element={<ApiTest />} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
-};
-
-// Protected route component
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div className="loading">Loading...</div>;
-  }
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
-
-// Dashboard component (placeholder)
-const Dashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-
-  return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Insurance Management System</h1>
-        <div className="header-actions">
-          <span>Welcome, {user?.name}</span>
-          <button onClick={logout} className="logout-button">
-            Logout
-          </button>
-        </div>
-      </header>
-      <main className="dashboard-content">
-        <div className="welcome-card">
-          <h2>Welcome to the Insurance Management System</h2>
-          <p>This is the dashboard for the {user?.role} role.</p>
-          <p>User Management and Authentication module is now active.</p>
-        </div>
-      </main>
-    </div>
-  );
-};
-
-// Main App component
-const AppContent: React.FC = () => {
-  return (
-    <Router>
-      <div className="App">
-        <ThemeToggle />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </div>
-    </Router>
-  );
-};
-
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
-  );
-};
+}
 
 export default App; 

@@ -13,5 +13,9 @@ namespace InsuranceAPI.Services
         Task<bool> DeleteAgentAsync(int id);
         Task<IEnumerable<AgentDto>> GetAgentsByDepartmentAsync(string department);
         Task<bool> IsAgentCodeUniqueAsync(string agentCode, int? excludeId = null);
+        Task<IEnumerable<OfferDto>> GetOffersByAgentDepartmentAsync(int agentId);
+        Task<IEnumerable<OfferDto>> GetPendingOffersByAgentDepartmentAsync(int agentId);
+        Task<OfferDto?> UpdateOfferAsync(int agentId, int offerId, UpdateOfferDto updateOfferDto);
+        Task<IEnumerable<ClaimDto>> GetClaimsByAgentDepartmentAsync(int agentId);
     }
 }

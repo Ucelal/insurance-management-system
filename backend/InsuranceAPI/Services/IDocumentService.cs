@@ -35,5 +35,8 @@ namespace InsuranceAPI.Services
         Task<List<string>> GetSupportedFileTypesAsync();
         Task<bool> IsFileTypeSupportedAsync(string fileType);
         Task<long> GetTotalStorageUsedAsync();
+        
+        // Policy Document Creation
+        Task<DocumentDto> CreatePolicyDocumentAsync(int policyId, int customerId, int uploadedByUserId);
     }
 }

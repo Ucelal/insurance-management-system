@@ -4,9 +4,8 @@ namespace InsuranceAPI.DTOs
 {
     public class CustomerDto
     {
-        public int Id { get; set; }
+        public int CustomerId { get; set; }
         public int? UserId { get; set; }
-        public string Type { get; set; } = string.Empty;
         public string IdNo { get; set; } = string.Empty;
         public string? Address { get; set; }
         public string? Phone { get; set; }
@@ -17,10 +16,6 @@ namespace InsuranceAPI.DTOs
     {
         [Required]
         public int UserId { get; set; }
-        
-        [Required]
-        [MaxLength(50)]
-        public string Type { get; set; } = string.Empty;
         
         [Required]
         [MaxLength(50)]
@@ -35,16 +30,19 @@ namespace InsuranceAPI.DTOs
     
     public class UpdateCustomerDto
     {
-        [Required]
-        public int UserId { get; set; }
+        // User bilgileri
+        [MaxLength(255)]
+        public string? Name { get; set; }
         
-        [Required]
-        [MaxLength(50)]
-        public string Type { get; set; } = string.Empty;
+        [EmailAddress]
+        public string? Email { get; set; }
         
-        [Required]
+        [MinLength(6)]
+        public string? Password { get; set; }
+        
+        // Customer bilgileri
         [MaxLength(50)]
-        public string IdNo { get; set; } = string.Empty;
+        public string? IdNo { get; set; }
         
         [MaxLength(1000)]
         public string? Address { get; set; }
@@ -56,8 +54,7 @@ namespace InsuranceAPI.DTOs
     // Toplu güncelleme için DTO
     public class BulkUpdateCustomerDto
     {
-        public int Id { get; set; }
-        public string? Type { get; set; }
+        public int CustomerId { get; set; }
         public string? Address { get; set; }
         public string? Phone { get; set; }
     }
@@ -66,18 +63,15 @@ namespace InsuranceAPI.DTOs
     public class CustomerStatisticsDto
     {
         public int TotalCustomers { get; set; }
-        public int IndividualCustomers { get; set; }
-        public int CorporateCustomers { get; set; }
         public int ActiveCustomers { get; set; }
         public int InactiveCustomers { get; set; }
-        public Dictionary<string, int> CustomersByType { get; set; } = new();
         public Dictionary<string, int> CustomersByMonth { get; set; } = new();
     }
     
     // Müşteri aktivite için DTO
     public class CustomerActivityDto
     {
-        public int Id { get; set; }
+        public int CustomerId { get; set; }
         public string Action { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }

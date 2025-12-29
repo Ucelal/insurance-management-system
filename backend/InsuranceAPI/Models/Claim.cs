@@ -1,58 +1,59 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using InsuranceAPI.Models;
 
 namespace InsuranceAPI.Models
 {
     public class Claim
     {
-        public int Id { get; set; }
-        
+        [Key]
+        [Column("Claim_Id")]
+        public int ClaimId { get; set; }
+
         [Required]
-        public int PolicyId { get; set; }
-        
+        [MaxLength(2000)]
+        public string Description { get; set; } = string.Empty;
+
         [Required]
-        public int CreatedByUserId { get; set; } // Hasarı bildiren kullanıcı
-        
-        public int? ProcessedByUserId { get; set; } // İşleyen kullanıcı (admin/agent)
-        
+        [MaxLength(50)]
+        public string Type { get; set; } = string.Empty; // ArabaKazası, Hırsızlık, DoğalAfet, vb.
+
+        [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = string.Empty; // Pending, UnderReview, Approved, Rejected, Closed
+
+        [Column("Incident_Date")]
+        public DateTime IncidentDate { get; set; }
+
+        [Column("Processed_At")]
+        public DateTime? ProcessedAt { get; set; }
+
+        [Column("Approved_Amount")]
+        public decimal? ApprovedAmount { get; set; }
+
         [MaxLength(1000)]
-        public string? Description { get; set; }
-        
-        [Required]
-        public ClaimStatus Status { get; set; } = ClaimStatus.Pending;
-        
-        [Required]
-        public ClaimType Type { get; set; } = ClaimType.Diger;
-        
-        [Required]
-        public ClaimPriority Priority { get; set; } = ClaimPriority.Normal;
-        
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? ClaimAmount { get; set; } // Hasar tutarı
-        
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal? ApprovedAmount { get; set; } // Onaylanan tutar
-        
-        public DateTime? EstimatedResolutionDate { get; set; } // Tahmini çözüm tarihi
-        
-        [Required]
+        public string? Notes { get; set; }
+
+        [Column("Created_At")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
-        public DateTime? ProcessedAt { get; set; } // İşlem tarihi
-        
-        [MaxLength(1000)]
-        public string? Notes { get; set; } // Admin/agent notları
-        
+
+        [Column("Updated_At")]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Foreign keys
+        [Column("Policy_Id")]
+        public int? PolicyId { get; set; }
+
+        [Column("Created_By_User_Id")]
+        public int? CreatedByUserId { get; set; }
+
+        [Column("Processed_By_User_Id")]
+        public int? ProcessedByUserId { get; set; }
+
         // Navigation properties
-        [ForeignKey("PolicyId")]
-        public virtual Policy? Policy { get; set; }
-        
-        [ForeignKey("CreatedByUserId")]
-        public virtual User? CreatedByUser { get; set; }
-        
-        [ForeignKey("ProcessedByUserId")]
-        public virtual User? ProcessedByUser { get; set; }
+        public Policy? Policy { get; set; }
+        public User CreatedByUser { get; set; } = null!;
+        public User? ProcessedByUser { get; set; }
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 }
 

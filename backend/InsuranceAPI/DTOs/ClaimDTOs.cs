@@ -5,22 +5,24 @@ namespace InsuranceAPI.DTOs
     // Hasar listesi için DTO
     public class ClaimDto
     {
-        public int Id { get; set; }
-        public int PolicyId { get; set; }
+        public int ClaimId { get; set; }
+        public int? PolicyId { get; set; }
         public string PolicyNumber { get; set; } = string.Empty;
-        public int CreatedByUserId { get; set; }
+        public int? CreatedByUserId { get; set; }
         public string CreatedByUserName { get; set; } = string.Empty;
+        public string? CreatedByUserEmail { get; set; }
         public int? ProcessedByUserId { get; set; }
         public string? ProcessedByUserName { get; set; }
+        public string? ProcessedByUserEmail { get; set; }
+        public string? ProcessedByUserPhone { get; set; }
+        public int? UserId { get; set; }
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public string Priority { get; set; } = string.Empty;
-        public decimal? ClaimAmount { get; set; }
         public decimal? ApprovedAmount { get; set; }
+        public DateTime? IncidentDate { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
-        public DateTime? EstimatedResolutionDate { get; set; }
         public string? Notes { get; set; }
         
         // Navigation DTOs
@@ -42,13 +44,56 @@ namespace InsuranceAPI.DTOs
         [Required]
         public string Type { get; set; } = string.Empty;
         
-        [Required]
-        public string Priority { get; set; } = string.Empty;
+        // Olay tarihi
+        public DateTime? IncidentDate { get; set; }
         
-        [Range(0, double.MaxValue)]
-        public decimal? ClaimAmount { get; set; }
+        // İletişim bilgileri
+        public string? ContactName { get; set; }
+        public string? ContactPhone { get; set; }
+        public string? ContactEmail { get; set; }
+        public string? ContactAddress { get; set; }
         
-        public DateTime? EstimatedResolutionDate { get; set; }
+        // Araç sigortası için ek alanlar
+        public string? VehiclePlate { get; set; }
+        public string? VehicleBrand { get; set; }
+        public string? VehicleModel { get; set; }
+        public string? VehicleYear { get; set; }
+        public string? AccidentLocation { get; set; }
+        public string? AccidentTime { get; set; }
+        
+        // Konut sigortası için ek alanlar
+        public string? PropertyAddress { get; set; }
+        public string? PropertyFloor { get; set; }
+        public string? PropertyType { get; set; }
+        
+        // Sağlık sigortası için ek alanlar
+        public string? PatientName { get; set; }
+        public string? PatientAge { get; set; }
+        public string? PatientGender { get; set; }
+        public string? PatientTc { get; set; }
+        public string? HospitalName { get; set; }
+        public string? DoctorName { get; set; }
+        
+        // Seyahat sigortası için ek alanlar
+        public string? TravelStartDate { get; set; }
+        public string? TravelEndDate { get; set; }
+        public string? TravelCountry { get; set; }
+        public string? TravelPurpose { get; set; }
+        
+        // Hayat sigortası için ek alanlar
+        public string? InsuredName { get; set; }
+        public string? InsuredAge { get; set; }
+        public string? InsuredGender { get; set; }
+        public string? InsuredTc { get; set; }
+        
+        // İş yeri sigortası için ek alanlar
+        public string? WorkplaceName { get; set; }
+        public string? WorkplaceAddress { get; set; }
+        public string? EmployeeCount { get; set; }
+        public string? BusinessSector { get; set; }
+        public string? SgkNumber { get; set; }
+        public string? SafetyOfficer { get; set; }
+        public string? EmergencyContact { get; set; }
     }
     
     // Hasar güncelleme için DTO
@@ -57,10 +102,7 @@ namespace InsuranceAPI.DTOs
         public string? Description { get; set; }
         public string? Status { get; set; }
         public string? Type { get; set; }
-        public string? Priority { get; set; }
-        public decimal? ClaimAmount { get; set; }
         public decimal? ApprovedAmount { get; set; }
-        public DateTime? EstimatedResolutionDate { get; set; }
         public string? Notes { get; set; }
     }
     
@@ -77,7 +119,6 @@ namespace InsuranceAPI.DTOs
         public decimal TotalClaimAmount { get; set; }
         public decimal TotalApprovedAmount { get; set; }
         public Dictionary<string, int> ClaimsByType { get; set; } = new();
-        public Dictionary<string, int> ClaimsByPriority { get; set; } = new();
         public Dictionary<string, int> ClaimsByMonth { get; set; } = new();
     }
     
@@ -86,12 +127,9 @@ namespace InsuranceAPI.DTOs
     {
         public string? Status { get; set; }
         public string? Type { get; set; }
-        public string? Priority { get; set; }
         public int? PolicyId { get; set; }
         public int? CreatedByUserId { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public decimal? MinAmount { get; set; }
-        public decimal? MaxAmount { get; set; }
     }
 }

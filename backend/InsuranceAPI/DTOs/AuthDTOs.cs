@@ -88,8 +88,8 @@ namespace InsuranceAPI.DTOs
         public string ConfirmPassword { get; set; } = string.Empty;
         
         [Required]
-        [MaxLength(10)]
-        public string AgentCode { get; set; } = string.Empty;
+        [MaxLength(100)]
+        public string Department { get; set; } = string.Empty;
         
         [Required]
         [MaxLength(500)]
@@ -98,10 +98,30 @@ namespace InsuranceAPI.DTOs
         [Required]
         [Attributes.Phone]
         public string Phone { get; set; } = string.Empty;
+    }
+    
+    // Admin kayıt için özel DTO
+    public class AdminRegisterDto
+    {
+        [Required]
+        [MaxLength(255)]
+        public string Name { get; set; } = string.Empty;
         
         [Required]
-        [MaxLength(100)]
-        public string Department { get; set; } = string.Empty;
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+        
+        [Required]
+        [MinLength(6)]
+        public string Password { get; set; } = string.Empty;
+        
+        [Required]
+        [Compare("Password")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+        
+        [Required]
+        [MaxLength(20)]
+        public string Phone { get; set; } = string.Empty;
     }
     
     public class AuthResponseDto

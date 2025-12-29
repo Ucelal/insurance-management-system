@@ -27,5 +27,11 @@ namespace InsuranceAPI.Services
         
         // Poliçe arama
         Task<List<PolicyDto>> SearchPoliciesAsync(string? policyNumber, DateTime? startDate, DateTime? endDate);
+        
+        // Ödeme sonrası poliçe oluştur
+        Task<PolicyDto?> CreatePolicyFromPaymentAsync(int offerId, decimal paymentAmount, int userId);
+        
+        // Müşterinin poliçelerini getir
+        Task<List<PolicyDto>> GetPoliciesByCustomerAsync(int userId);
     }
 }

@@ -17,7 +17,7 @@ namespace InsuranceAPI.DTOs
     
     public class SalesByAgentDto
     {
-        public int AgentId { get; set; }
+        public int? AgentId { get; set; }
         public string AgentName { get; set; } = string.Empty;
         public string AgentCode { get; set; } = string.Empty;
         public int PoliciesSold { get; set; }

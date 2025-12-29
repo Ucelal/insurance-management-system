@@ -56,16 +56,15 @@ namespace InsuranceAPI.Services
                 ExpiresAt = DateTime.UtcNow.AddHours(24),
                 User = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.UserId,
                     Name = user.Name,
                     Email = user.Email,
                     Role = user.Role,
                     CreatedAt = user.CreatedAt,
                     Customer = user.Customer != null ? new CustomerDto
                     {
-                        Id = user.Customer.Id,
+                        CustomerId = user.Customer.CustomerId,
                         UserId = user.Customer.UserId,
-                        Type = user.Customer.Type,
                         IdNo = user.Customer.IdNo,
                         Address = user.Customer.Address,
                         Phone = user.Customer.Phone
@@ -99,14 +98,13 @@ namespace InsuranceAPI.Services
             // Eğer kullanıcı customer rolü ile kayıt oluyorsa, Customers tablosuna da ekle
             if (registerDto.Role.ToLower() == "customer")
             {
-                var customer = new Customer
-                {
-                    UserId = user.Id,
-                    Type = "bireysel", // Varsayılan olarak bireysel
-                    IdNo = $"CUST_{user.Id}_{DateTime.UtcNow:yyyyMMdd}", // Otomatik ID No oluştur
-                    Address = "",
-                    Phone = ""
-                };
+            var customer = new Customer
+            {
+                UserId = user.UserId,
+                IdNo = $"CUST_{user.UserId}_{DateTime.UtcNow:yyyyMMdd}", // Otomatik ID No oluştur
+                Address = "",
+                Phone = ""
+            };
                 
                 _context.Customers.Add(customer);
                 await _context.SaveChangesAsync();
@@ -124,7 +122,7 @@ namespace InsuranceAPI.Services
                 ExpiresAt = DateTime.UtcNow.AddHours(24),
                 User = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.UserId,
                     Name = user.Name,
                     Email = user.Email,
                     Role = user.Role,
@@ -164,8 +162,7 @@ namespace InsuranceAPI.Services
             // Create customer record
             var customer = new Customer
             {
-                UserId = user.Id,
-                Type = customerRegisterDto.CustomerType,
+                UserId = user.UserId,
                 IdNo = customerRegisterDto.TcNo,
                 Address = customerRegisterDto.Address,
                 Phone = customerRegisterDto.Phone
@@ -186,7 +183,7 @@ namespace InsuranceAPI.Services
                 ExpiresAt = DateTime.UtcNow.AddHours(24),
                 User = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.UserId,
                     Name = user.Name,
                     Email = user.Email,
                     Role = user.Role,
@@ -195,20 +192,53 @@ namespace InsuranceAPI.Services
             };
         }
         
+        /// <summary>
+        /// Departmana göre otomatik acenta kodu oluşturur
+        /// </summary>
+        private string GenerateAgentCodeByDepartment(string department, string userRole)
+        {
+            // Admin için özel kod
+            if (userRole == "Admin" || userRole == "admin")
+            {
+                return "ADM";
+            }
+
+            // Departman kodları mapping
+            var departmentCodeMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Konut Sigortası", "KON" },
+                { "Seyahat Sigortası", "SEY" },
+                { "İşyeri Sigortası", "İŞ" },
+                { "İş Yeri Sigortası", "İŞ" },
+                { "Trafik Sigortası", "TRA" },
+                { "Sağlık Sigortası", "SAĞ" },
+                { "Hayat Sigortası", "HAY" }
+            };
+
+            if (departmentCodeMap.TryGetValue(department, out var code))
+            {
+                return code;
+            }
+
+            // Eğer mapping'de yoksa, departman isminin ilk 3 harfini al
+            return department.Length >= 3 
+                ? department.Substring(0, 3).ToUpper() 
+                : department.ToUpper();
+        }
+
         // Agent kayıt işlemi - özel validasyon ve iş mantığı
         public async Task<AuthResponseDto?> RegisterAgentAsync(AgentRegisterDto agentRegisterDto)
         {
-            // Email kontrolü
-            if (await _context.Users.AnyAsync(u => u.Email == agentRegisterDto.Email))
+            try
             {
-                return null;
-            }
-            
-            // Agent Code kontrolü
-            if (await _context.Agents.AnyAsync(a => a.AgentCode == agentRegisterDto.AgentCode))
-            {
-                return null;
-            }
+                Console.WriteLine($"Agent registration started for: {agentRegisterDto.Email}");
+                
+                // Email kontrolü
+                if (await _context.Users.AnyAsync(u => u.Email == agentRegisterDto.Email))
+                {
+                    Console.WriteLine($"Email already exists: {agentRegisterDto.Email}");
+                    return null;
+                }
             
             // Create new user with agent role
             var user = new User
@@ -223,11 +253,15 @@ namespace InsuranceAPI.Services
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             
+            // Otomatik acenta kodu oluştur (departmana göre)
+            string agentCode = GenerateAgentCodeByDepartment(agentRegisterDto.Department, user.Role);
+            Console.WriteLine($"Generated agent code '{agentCode}' for department '{agentRegisterDto.Department}'");
+            
             // Create agent record
             var agent = new Agent
             {
-                UserId = user.Id,
-                AgentCode = agentRegisterDto.AgentCode,
+                UserId = user.UserId,
+                AgentCode = agentCode,
                 Department = agentRegisterDto.Department,
                 Address = agentRegisterDto.Address,
                 Phone = agentRegisterDto.Phone
@@ -248,13 +282,88 @@ namespace InsuranceAPI.Services
                 ExpiresAt = DateTime.UtcNow.AddHours(24),
                 User = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.UserId,
                     Name = user.Name,
                     Email = user.Email,
                     Role = user.Role,
                     CreatedAt = user.CreatedAt
                 }
             };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Agent registration error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw; // Hatayı tekrar fırlat
+            }
+        }
+        
+        public async Task<AuthResponseDto?> RegisterAdminAsync(AdminRegisterDto adminRegisterDto)
+        {
+            try
+            {
+                Console.WriteLine($"Admin registration started for: {adminRegisterDto.Email}");
+                
+                // Email kontrolü
+                if (await _context.Users.AnyAsync(u => u.Email == adminRegisterDto.Email))
+                {
+                    Console.WriteLine($"Email already exists: {adminRegisterDto.Email}");
+                    return null;
+                }
+            
+                // Create new user with admin role
+                var user = new User
+                {
+                    Name = adminRegisterDto.Name,
+                    Email = adminRegisterDto.Email,
+                    Role = "admin",
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminRegisterDto.Password),
+                    CreatedAt = DateTime.UtcNow
+                };
+                
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+                
+                // Admin için otomatik Agent kaydı oluştur
+                var agent = new Agent
+                {
+                    UserId = user.UserId,
+                    AgentCode = "ADM",
+                    Department = "Admin",
+                    Address = "Admin Adresi",
+                    Phone = "0555-000-0000"
+                };
+                
+                _context.Agents.Add(agent);
+                await _context.SaveChangesAsync();
+                
+                Console.WriteLine($"Admin registration successful for: {adminRegisterDto.Email}, Agent ID: {agent.AgentId}");
+                
+                // Generate tokens
+                var token = _jwtService.GenerateToken(user);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+                
+                return new AuthResponseDto
+                {
+                    Token = token,
+                    RefreshToken = refreshToken,
+                    ExpiresAt = DateTime.UtcNow.AddHours(24),
+                    User = new UserDto
+                    {
+                        Id = user.UserId,
+                        Name = user.Name,
+                        Email = user.Email,
+                        Role = user.Role,
+                        CreatedAt = user.CreatedAt
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Admin registration error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                throw; // Hatayı tekrar fırlat
+            }
         }
         
         public async Task<bool> ValidateTokenAsync(string token)
@@ -266,7 +375,7 @@ namespace InsuranceAPI.Services
             var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId)) return false;
             
-            return await _context.Users.AnyAsync(u => u.Id == int.Parse(userId));
+            return await _context.Users.AnyAsync(u => u.UserId == int.Parse(userId));
         }
         
         public async Task<UserDto?> GetUserFromTokenAsync(string token)
@@ -280,22 +389,21 @@ namespace InsuranceAPI.Services
             
             var user = await _context.Users
                 .Include(u => u.Customer)
-                .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+                .FirstOrDefaultAsync(u => u.UserId == int.Parse(userId));
                 
             if (user == null) return null;
             
             return new UserDto
             {
-                Id = user.Id,
+                Id = user.UserId,
                 Name = user.Name,
                 Email = user.Email,
                 Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 Customer = user.Customer != null ? new CustomerDto
                 {
-                    Id = user.Customer.Id,
+                    CustomerId = user.Customer.CustomerId,
                     UserId = user.Customer.UserId,
-                    Type = user.Customer.Type,
                     IdNo = user.Customer.IdNo,
                     Address = user.Customer.Address,
                     Phone = user.Customer.Phone
@@ -308,6 +416,14 @@ namespace InsuranceAPI.Services
             return await _context.Users
                 .Include(u => u.Customer)
                 .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        // Token'ı blacklist'e ekle
+        public async Task BlacklistTokenAsync(string token, string userEmail, string reason = "logout")
+        {
+            // Bu metod şimdilik boş - TokenBlacklistService kullanılacak
+            // AuthController'da direkt TokenBlacklistService çağrılıyor
+            await Task.CompletedTask;
         }
     }
 } 

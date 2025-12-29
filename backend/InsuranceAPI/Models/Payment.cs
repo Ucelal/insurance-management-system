@@ -5,35 +5,46 @@ namespace InsuranceAPI.Models
 {
     public class Payment
     {
-        public int Id { get; set; }
+        [Key]
+        [Column("Payment_Id")]
+        public int PaymentId { get; set; }
 
         [Required]
-        public int PolicyId { get; set; } // Poliçe ID'si
+        [Column("Amount")]
+        public decimal Amount { get; set; }
 
         [Required]
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Amount { get; set; } // Tutar
-
-        public DateTime PaidAt { get; set; } = DateTime.UtcNow; // Ödeme tarihi
+        [MaxLength(50)]
+        public string Method { get; set; } = string.Empty; // Nakit, Kredi Kartı, Banka Transferi
 
         [Required]
-        public PaymentMethod Method { get; set; } = PaymentMethod.KrediKarti; // Ödeme yöntemi
-
-        [Required]
-        public PaymentStatus Status { get; set; } = PaymentStatus.Beklemede; // Ödeme durumu
+        [MaxLength(50)]
+        public string Status { get; set; } = string.Empty; // Pending, Completed, Failed, Refunded
 
         [MaxLength(100)]
-        public string? TransactionId { get; set; } // Banka işlem numarası
+        public string? TransactionId { get; set; }
 
         [MaxLength(500)]
-        public string? Notes { get; set; } // Notlar
+        public string? Notes { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Oluşturulma tarihi
+        [Column("Paid_At")]
+        public DateTime? PaidAt { get; set; }
 
-        public DateTime? UpdatedAt { get; set; } // Güncellenme tarihi
+        [Column("Created_At")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        [ForeignKey("PolicyId")]
-        public virtual Policy? Policy { get; set; }
+        [Column("Updated_At")]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Foreign keys
+        [Column("Policy_Id")]
+        public int? PolicyId { get; set; }
+
+        [Column("User_Id")]
+        public int? UserId { get; set; }
+
+        // Navigation properties
+        public Policy Policy { get; set; } = null!;
     }
 }
 

@@ -13,6 +13,7 @@ namespace InsuranceAPI.Services
         Task<List<ClaimDto>> GetClaimsByUserAsync(int userId);
         Task<ClaimDto> CreateClaimAsync(CreateClaimDto createDto, int createdByUserId);
         Task<ClaimDto> UpdateClaimAsync(int id, UpdateClaimDto updateDto, int processedByUserId);
+        Task<ClaimDto> UpdateMyClaimAsync(int id, UpdateClaimDto updateDto, int userId);
         Task<bool> DeleteClaimAsync(int id);
         Task<ClaimStatisticsDto> GetClaimStatisticsAsync();
         Task<List<ClaimDto>> SearchClaimsAsync(ClaimSearchDto searchDto);
@@ -34,7 +35,9 @@ namespace InsuranceAPI.Services
             var claims = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
+                    .ThenInclude(u => u.Agent)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
                 
@@ -47,8 +50,10 @@ namespace InsuranceAPI.Services
             var claim = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                    .ThenInclude(u => u.Agent)
+                .FirstOrDefaultAsync(c => c.ClaimId == id);
                 
             return claim != null ? MapToDto(claim) : null;
         }
@@ -59,7 +64,9 @@ namespace InsuranceAPI.Services
             var claims = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Where(c => c.PolicyId == policyId)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
@@ -73,7 +80,9 @@ namespace InsuranceAPI.Services
             var claims = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Where(c => c.CreatedByUserId == userId)
                 .OrderByDescending(c => c.CreatedAt)
                 .ToListAsync();
@@ -91,27 +100,14 @@ namespace InsuranceAPI.Services
                 throw new ArgumentException("Geçersiz poliçe ID");
             }
             
-            // Enum değerlerini parse et
-            if (!Enum.TryParse<ClaimType>(createDto.Type, out var claimType))
-            {
-                throw new ArgumentException("Geçersiz hasar türü");
-            }
-            
-            if (!Enum.TryParse<ClaimPriority>(createDto.Priority, out var claimPriority))
-            {
-                throw new ArgumentException("Geçersiz öncelik");
-            }
-            
             var claim = new Claim
             {
                 PolicyId = createDto.PolicyId,
                 CreatedByUserId = createdByUserId,
                 Description = createDto.Description,
-                Type = claimType,
-                Priority = claimPriority,
-                ClaimAmount = createDto.ClaimAmount,
-                EstimatedResolutionDate = createDto.EstimatedResolutionDate,
-                Status = ClaimStatus.Pending,
+                Type = createDto.Type,
+                IncidentDate = createDto.IncidentDate ?? DateTime.UtcNow,
+                Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             };
             
@@ -122,13 +118,15 @@ namespace InsuranceAPI.Services
             var createdClaim = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
-                .FirstOrDefaultAsync(c => c.Id == claim.Id);
+                    .ThenInclude(u => u.Agent)
+                .FirstOrDefaultAsync(c => c.ClaimId == claim.ClaimId);
                 
             return MapToDto(createdClaim!);
         }
         
-        // Hasar güncelle
+        // Hasar güncelle (admin ve agent için)
         public async Task<ClaimDto> UpdateClaimAsync(int id, UpdateClaimDto updateDto, int processedByUserId)
         {
             var claim = await _context.Claims.FindAsync(id);
@@ -149,40 +147,27 @@ namespace InsuranceAPI.Services
                 
             if (!string.IsNullOrEmpty(updateDto.Status))
             {
-                if (Enum.TryParse<ClaimStatus>(updateDto.Status, out var status))
+                claim.Status = updateDto.Status;
+                if (updateDto.Status != "Pending")
                 {
-                    claim.Status = status;
-                    if (status != ClaimStatus.Pending)
-                    {
-                        claim.ProcessedByUserId = processedByUserId;
-                        claim.ProcessedAt = DateTime.UtcNow;
-                    }
+                    claim.ProcessedByUserId = processedByUserId;
+                    claim.ProcessedAt = DateTime.UtcNow;
                 }
             }
             
             if (!string.IsNullOrEmpty(updateDto.Type))
             {
-                if (Enum.TryParse<ClaimType>(updateDto.Type, out var type))
-                    claim.Type = type;
+                claim.Type = updateDto.Type;
             }
-            
-            if (!string.IsNullOrEmpty(updateDto.Priority))
-            {
-                if (Enum.TryParse<ClaimPriority>(updateDto.Priority, out var priority))
-                    claim.Priority = priority;
-            }
-            
-            if (updateDto.ClaimAmount.HasValue)
-                claim.ClaimAmount = updateDto.ClaimAmount.Value;
                 
             if (updateDto.ApprovedAmount.HasValue)
                 claim.ApprovedAmount = updateDto.ApprovedAmount.Value;
                 
-            if (updateDto.EstimatedResolutionDate.HasValue)
-                claim.EstimatedResolutionDate = updateDto.EstimatedResolutionDate.Value;
-                
             if (!string.IsNullOrEmpty(updateDto.Notes))
                 claim.Notes = updateDto.Notes;
+            
+            // UpdatedAt alanını güncelle
+            claim.UpdatedAt = DateTime.UtcNow;
             
             await _context.SaveChangesAsync();
             
@@ -190,8 +175,52 @@ namespace InsuranceAPI.Services
             var updatedClaim = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                    .ThenInclude(u => u.Agent)
+                .FirstOrDefaultAsync(c => c.ClaimId == id);
+                
+            return MapToDto(updatedClaim!);
+        }
+        
+        // Customer kendi pending claim'ini güncelle
+        public async Task<ClaimDto> UpdateMyClaimAsync(int id, UpdateClaimDto updateDto, int userId)
+        {
+            var claim = await _context.Claims.FindAsync(id);
+            if (claim == null)
+            {
+                throw new ArgumentException("Hasar bulunamadı");
+            }
+            
+            // Sadece kendi claim'ini güncelleyebilir
+            if (claim.CreatedByUserId != userId)
+            {
+                throw new UnauthorizedAccessException("Bu işlem için yetkiniz yok");
+            }
+            
+            // Sadece Pending durumundaki claim'ler güncellenebilir
+            if (claim.Status != "Pending")
+            {
+                throw new ArgumentException("Sadece beklemedeki hasar bildirimleri güncellenebilir");
+            }
+            
+            // Customer sadece description güncelleyebilir
+            if (!string.IsNullOrEmpty(updateDto.Description))
+                claim.Description = updateDto.Description;
+            
+            // UpdatedAt alanını güncelle
+            claim.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            // Güncellenmiş hasarı getir
+            var updatedClaim = await _context.Claims
+                .Include(c => c.Policy)
+                .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
+                .Include(c => c.ProcessedByUser)
+                    .ThenInclude(u => u.Agent)
+                .FirstOrDefaultAsync(c => c.ClaimId == id);
                 
             return MapToDto(updatedClaim!);
         }
@@ -216,24 +245,18 @@ namespace InsuranceAPI.Services
             var statistics = new ClaimStatisticsDto
             {
                 TotalClaims = claims.Count,
-                PendingClaims = claims.Count(c => c.Status == ClaimStatus.Pending),
-                InReviewClaims = claims.Count(c => c.Status == ClaimStatus.InReview),
-                ApprovedClaims = claims.Count(c => c.Status == ClaimStatus.Approved),
-                RejectedClaims = claims.Count(c => c.Status == ClaimStatus.Rejected),
-                ResolvedClaims = claims.Count(c => c.Status == ClaimStatus.Resolved),
-                ClosedClaims = claims.Count(c => c.Status == ClaimStatus.Closed),
-                TotalClaimAmount = claims.Where(c => c.ClaimAmount.HasValue).Sum(c => c.ClaimAmount!.Value),
+                PendingClaims = claims.Count(c => c.Status == "Pending"),
+                InReviewClaims = claims.Count(c => c.Status == "InReview"),
+                ApprovedClaims = claims.Count(c => c.Status == "Approved"),
+                RejectedClaims = claims.Count(c => c.Status == "Rejected"),
+                ResolvedClaims = claims.Count(c => c.Status == "Resolved"),
+                ClosedClaims = claims.Count(c => c.Status == "Closed"),
                 TotalApprovedAmount = claims.Where(c => c.ApprovedAmount.HasValue).Sum(c => c.ApprovedAmount!.Value)
             };
             
             // Hasar türüne göre sayılar
             statistics.ClaimsByType = claims
                 .GroupBy(c => c.Type.ToString())
-                .ToDictionary(g => g.Key, g => g.Count());
-                
-            // Önceliğe göre sayılar
-            statistics.ClaimsByPriority = claims
-                .GroupBy(c => c.Priority.ToString())
                 .ToDictionary(g => g.Key, g => g.Count());
                 
             // Aya göre sayılar
@@ -250,25 +273,19 @@ namespace InsuranceAPI.Services
             var query = _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
+                    .ThenInclude(u => u.Agent)
                 .AsQueryable();
                 
             if (!string.IsNullOrEmpty(searchDto.Status))
             {
-                if (Enum.TryParse<ClaimStatus>(searchDto.Status, out var status))
-                    query = query.Where(c => c.Status == status);
+                query = query.Where(c => c.Status == searchDto.Status);
             }
             
             if (!string.IsNullOrEmpty(searchDto.Type))
             {
-                if (Enum.TryParse<ClaimType>(searchDto.Type, out var type))
-                    query = query.Where(c => c.Type == type);
-            }
-            
-            if (!string.IsNullOrEmpty(searchDto.Priority))
-            {
-                if (Enum.TryParse<ClaimPriority>(searchDto.Priority, out var priority))
-                    query = query.Where(c => c.Priority == priority);
+                query = query.Where(c => c.Type == searchDto.Type);
             }
             
             if (searchDto.PolicyId.HasValue)
@@ -283,12 +300,6 @@ namespace InsuranceAPI.Services
             if (searchDto.EndDate.HasValue)
                 query = query.Where(c => c.CreatedAt <= searchDto.EndDate.Value);
                 
-            if (searchDto.MinAmount.HasValue)
-                query = query.Where(c => c.ClaimAmount >= searchDto.MinAmount.Value);
-                
-            if (searchDto.MaxAmount.HasValue)
-                query = query.Where(c => c.ClaimAmount <= searchDto.MaxAmount.Value);
-                
             var claims = await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
             return claims.Select(MapToDto).ToList();
         }
@@ -302,22 +313,21 @@ namespace InsuranceAPI.Services
                 throw new ArgumentException("Hasar bulunamadı");
             }
             
-            if (Enum.TryParse<ClaimStatus>(status, out var claimStatus))
-            {
-                claim.Status = claimStatus;
-                claim.ProcessedByUserId = processedByUserId;
-                claim.ProcessedAt = DateTime.UtcNow;
-                claim.Notes = notes;
-                
-                await _context.SaveChangesAsync();
-            }
+            claim.Status = status;
+            claim.ProcessedByUserId = processedByUserId;
+            claim.ProcessedAt = DateTime.UtcNow;
+            claim.Notes = notes;
+            
+            await _context.SaveChangesAsync();
             
             // İşlenmiş hasarı getir
             var processedClaim = await _context.Claims
                 .Include(c => c.Policy)
                 .Include(c => c.CreatedByUser)
+                    .ThenInclude(u => u.Agent)
                 .Include(c => c.ProcessedByUser)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                    .ThenInclude(u => u.Agent)
+                .FirstOrDefaultAsync(c => c.ClaimId == id);
                 
             return MapToDto(processedClaim!);
         }
@@ -327,26 +337,27 @@ namespace InsuranceAPI.Services
         {
             return new ClaimDto
             {
-                Id = claim.Id,
+                ClaimId = claim.ClaimId,
                 PolicyId = claim.PolicyId,
                 PolicyNumber = claim.Policy?.PolicyNumber ?? string.Empty,
                 CreatedByUserId = claim.CreatedByUserId,
                 CreatedByUserName = claim.CreatedByUser?.Name ?? string.Empty,
+                CreatedByUserEmail = claim.CreatedByUser?.Email,
                 ProcessedByUserId = claim.ProcessedByUserId,
                 ProcessedByUserName = claim.ProcessedByUser?.Name ?? string.Empty,
+                ProcessedByUserEmail = claim.ProcessedByUser?.Email,
+                ProcessedByUserPhone = claim.ProcessedByUser?.Agent?.Phone ?? string.Empty,
                 Description = claim.Description ?? string.Empty,
-                Status = claim.Status.ToString(),
-                Type = claim.Type.ToString(),
-                Priority = claim.Priority.ToString(),
-                ClaimAmount = claim.ClaimAmount,
+                Status = claim.Status,
+                Type = claim.Type,
                 ApprovedAmount = claim.ApprovedAmount,
+                IncidentDate = claim.IncidentDate,
                 CreatedAt = claim.CreatedAt,
                 ProcessedAt = claim.ProcessedAt,
-                EstimatedResolutionDate = claim.EstimatedResolutionDate,
                 Notes = claim.Notes,
                 Policy = claim.Policy != null ? new PolicyDto
                 {
-                    Id = claim.Policy.Id,
+                    PolicyId = claim.Policy.PolicyId,
                     PolicyNumber = claim.Policy.PolicyNumber,
                     StartDate = claim.Policy.StartDate,
                     EndDate = claim.Policy.EndDate,
@@ -355,14 +366,14 @@ namespace InsuranceAPI.Services
                 } : null,
                 CreatedByUser = claim.CreatedByUser != null ? new UserDto
                 {
-                    Id = claim.CreatedByUser.Id,
+                    UserId = claim.CreatedByUser.UserId,
                     Name = claim.CreatedByUser.Name,
                     Email = claim.CreatedByUser.Email,
                     Role = claim.CreatedByUser.Role
                 } : null,
                 ProcessedByUser = claim.ProcessedByUser != null ? new UserDto
                 {
-                    Id = claim.ProcessedByUser.Id,
+                    UserId = claim.ProcessedByUser.UserId,
                     Name = claim.ProcessedByUser.Name,
                     Email = claim.ProcessedByUser.Email,
                     Role = claim.ProcessedByUser.Role

@@ -5,7 +5,7 @@ namespace InsuranceAPI.DTOs
     public class AgentDto
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
         public string AgentCode { get; set; } = string.Empty;
         public string Department { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
@@ -20,9 +20,7 @@ namespace InsuranceAPI.DTOs
         [Required]
         public int UserId { get; set; }
         
-        [Required]
-        [MaxLength(10)]
-        public string AgentCode { get; set; } = string.Empty;
+        // AgentCode artık departmana göre otomatik oluşturulacak
         
         [Required]
         [MaxLength(100)]
@@ -39,6 +37,17 @@ namespace InsuranceAPI.DTOs
     
     public class UpdateAgentDto
     {
+        // User bilgileri
+        [MaxLength(255)]
+        public string? Name { get; set; }
+        
+        [EmailAddress]
+        public string? Email { get; set; }
+        
+        [MinLength(6)]
+        public string? Password { get; set; }
+        
+        // Agent bilgileri
         [MaxLength(10)]
         public string? AgentCode { get; set; }
         

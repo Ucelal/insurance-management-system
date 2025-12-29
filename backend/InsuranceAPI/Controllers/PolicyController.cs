@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using InsuranceAPI.DTOs;
 using InsuranceAPI.Services;
+using System.Security.Claims;
 
 namespace InsuranceAPI.Controllers
 {
@@ -56,7 +57,7 @@ namespace InsuranceAPI.Controllers
                 return BadRequest(new { message = "Poliçe oluşturulamadı. Teklif bulunamadı veya poliçe numarası zaten kullanımda." });
             }
             
-            return CreatedAtAction(nameof(GetPolicyById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetPolicyById), new { id = result.UserId }, result);
         }
         
         // Poliçe güncelle
@@ -125,6 +126,15 @@ namespace InsuranceAPI.Controllers
         public async Task<ActionResult<List<PolicyDto>>> SearchPolicies([FromQuery] string? policyNumber, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
             var policies = await _policyService.SearchPoliciesAsync(policyNumber, startDate, endDate);
+            return Ok(policies);
+        }
+        
+        // Müşterinin kendi poliçelerini getir
+        [HttpGet("my-policies")]
+        public async Task<ActionResult<List<PolicyDto>>> GetMyPolicies()
+        {
+            var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var policies = await _policyService.GetPoliciesByCustomerAsync(userId);
             return Ok(policies);
         }
     }

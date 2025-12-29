@@ -6,8 +6,9 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string, confirmPassword: string, role: string) => Promise<boolean>;
+  token: string | null;
+  login: (email: string, password: string, role?: 'admin' | 'agent' | 'customer') => Promise<boolean>;
+  register: (userData: any) => Promise<boolean>;
   logout: () => void;
   updateUser: (user: User) => void;
 }
@@ -28,25 +29,30 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
 
-      if (token && storedUser) {
+      if (storedToken && storedUser) {
         try {
-          const isValid = await apiService.validateToken(token);
-          if (isValid) {
-            setUser(JSON.parse(storedUser));
+          // Try to get current user to validate token
+          const currentUser = await apiService.getCurrentUser();
+          if (currentUser) {
+            setUser(currentUser);
+            setToken(storedToken);
           } else {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            setToken(null);
           }
         } catch (error) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
+          setToken(null);
         }
       }
       setIsLoading(false);
@@ -55,46 +61,77 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string, role?: 'admin' | 'agent' | 'customer'): Promise<boolean> => {
     try {
-      const response: AuthResponse = await apiService.login({ email, password });
+      console.log('🔐 AuthContext: Login attempt for:', email);
+      
+      // Create login data object matching the backend LoginDto
+      const loginData = { email, password };
+      
+      const response: AuthResponse = await apiService.login(loginData);
+      console.log('✅ AuthContext: Login successful, response:', response);
       
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('expiresAt', response.expiresAt);
       localStorage.setItem('user', JSON.stringify(response.user));
+      
+      console.log('💾 AuthContext: Token stored:', response.token);
+      console.log('👤 AuthContext: User stored:', response.user);
+      
+      // Update user state immediately
       setUser(response.user);
+      setToken(response.token);
+      
+      console.log('🔄 AuthContext: State updated');
       
       return true;
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      console.error('❌ AuthContext: Login error:', error);
+      // Re-throw the error so the calling component can handle it properly
+      throw error;
     }
   };
 
-  const register = async (name: string, email: string, password: string, confirmPassword: string, role: string): Promise<boolean> => {
+  const register = async (userData: any): Promise<boolean> => {
     try {
-      const response: AuthResponse = await apiService.register({ 
-        name, 
-        email, 
-        password, 
-        confirmPassword, 
-        role 
-      });
+      // Use customer register endpoint for customer registration
+      const response: AuthResponse = await apiService.registerCustomer(userData);
       
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      localStorage.setItem('expiresAt', response.expiresAt);
       localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);
-      
+      setToken(response.token);
       return true;
     } catch (error) {
       console.error('Register error:', error);
-      return false;
+      // Re-throw the error so the calling component can handle it properly
+      throw error;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
+  const logout = async () => {
+    try {
+      // Backend'e logout isteği gönder ve token'ı blacklist'e ekle
+      if (token) {
+        await apiService.logout();
+        console.log('✅ Logout successful - token blacklisted');
+      }
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Logout başarısız olsa bile local storage'ı temizle
+    } finally {
+      // Local storage'ı temizle
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('expiresAt');
+      localStorage.removeItem('user');
+      setUser(null);
+      setToken(null);
+      console.log('🧹 Local storage cleared');
+    }
   };
 
   const updateUser = (updatedUser: User) => {
@@ -106,6 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     isAuthenticated: !!user,
     isLoading,
+    token,
     login,
     register,
     logout,

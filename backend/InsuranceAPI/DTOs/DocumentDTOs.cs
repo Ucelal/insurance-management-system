@@ -5,7 +5,7 @@ namespace InsuranceAPI.DTOs
     public class DocumentDto
     {
         public int Id { get; set; }
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
         public int? ClaimId { get; set; }
         public int? PolicyId { get; set; }
         public string FileName { get; set; } = string.Empty;
@@ -19,8 +19,9 @@ namespace InsuranceAPI.DTOs
         public DateTime UploadedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? ExpiresAt { get; set; }
-        public int UploadedByUserId { get; set; }
+        public int? UploadedByUserId { get; set; }
         public string UploadedByUserName { get; set; } = string.Empty;
+        public int? UserId { get; set; }
         public string CustomerName { get; set; } = string.Empty;
         public string? PolicyNumber { get; set; }
         public string? ClaimNumber { get; set; }
@@ -28,8 +29,7 @@ namespace InsuranceAPI.DTOs
     
     public class CreateDocumentDto
     {
-        [Required]
-        public int CustomerId { get; set; }
+        public int? CustomerId { get; set; }
         
         public int? ClaimId { get; set; }
         

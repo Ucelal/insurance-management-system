@@ -11,7 +11,7 @@ namespace InsuranceAPI.DTOs
         public decimal Premium { get; set; }
         public bool IsOptional { get; set; }
         public bool IsActive { get; set; }
-        public int InsuranceTypeId { get; set; }
+        public int? InsuranceTypeId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         

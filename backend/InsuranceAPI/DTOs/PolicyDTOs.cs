@@ -4,8 +4,8 @@ namespace InsuranceAPI.DTOs
 {
     public class PolicyDto
     {
-        public int Id { get; set; }
-        public int OfferId { get; set; }
+        public int PolicyId { get; set; }
+        public int? OfferId { get; set; }
         
         // Poliçe Detayları
         public string PolicyNumber { get; set; } = string.Empty;
@@ -14,10 +14,7 @@ namespace InsuranceAPI.DTOs
         public decimal TotalPremium { get; set; }
         public string Status { get; set; } = string.Empty;
         
-        // Ödeme Bilgileri
-        public string PaymentMethod { get; set; } = string.Empty;
-        public DateTime? PaidAt { get; set; }
-        public string PaymentStatus { get; set; } = string.Empty;
+        public int? UserId { get; set; }
         
         // Ek Bilgiler
         public string Notes { get; set; } = string.Empty;
@@ -26,16 +23,20 @@ namespace InsuranceAPI.DTOs
         
         // Navigation properties
         public OfferDto? Offer { get; set; }
+        
+        // Teklif formunu onaylayan yetkili bilgileri
+        public string? ApprovedByAgentName { get; set; }
+        public string? ApprovedByAgentPhone { get; set; }
+        public string? ApprovedByAgentEmail { get; set; }
     }
     
     public class CreatePolicyDto
     {
-        public int OfferId { get; set; }
+        public int? OfferId { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string PolicyNumber { get; set; } = string.Empty;
         public decimal TotalPremium { get; set; }
-        public string? PaymentMethod { get; set; }
         public string? Notes { get; set; }
     }
     
@@ -46,8 +47,6 @@ namespace InsuranceAPI.DTOs
         public string? PolicyNumber { get; set; }
         public decimal? TotalPremium { get; set; }
         public string? Status { get; set; }
-        public string? PaymentMethod { get; set; }
-        public string? PaymentStatus { get; set; }
         public string? Notes { get; set; }
     }
 }

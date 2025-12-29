@@ -1,0 +1,8 @@
+# React Router refresh fix
+/*    /index.html   200
+
+# API routes
+/api/*  https://localhost:5000/api/:splat  200
+
+# Static assets
+/static/*  /static/:splat  200

@@ -5,29 +5,32 @@ namespace InsuranceAPI.Models
 {
     public class User
     {
-        public int Id { get; set; }
-        
-        [Required]
-        [MaxLength(255)]
-        public string Name { get; set; } = string.Empty;
-        
-        [Required]
-        [MaxLength(50)]
-        public string Role { get; set; } = string.Empty;
-        
+        [Key]
+        [Column("User_Id")]
+        public int UserId { get; set; }
+
         [Required]
         [MaxLength(255)]
         public string Email { get; set; } = string.Empty;
-        
+
         [Required]
+        [MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [Column("Password_Hash")]
         public string PasswordHash { get; set; } = string.Empty;
-        
+
+        [Required]
+        [MaxLength(50)]
+        public string Role { get; set; } = string.Empty;
+
+        [Column("Created_At")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         // Navigation properties
-        public virtual Customer? Customer { get; set; }
-        public virtual Agent? Agent { get; set; }
-        public virtual ICollection<Claim>? ReportedClaims { get; set; }
-        public virtual ICollection<Claim>? ProcessedClaims { get; set; }
+        public Customer? Customer { get; set; }
+        public Agent? Agent { get; set; }
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 } 

@@ -5,32 +5,27 @@ namespace InsuranceAPI.Models
 {
     public class Customer
     {
-        public int Id { get; set; }
-        
-        [Required]
-        public int UserId { get; set; }
-        
-        [Required]
-        [MaxLength(50)]
-        public string Type { get; set; } = string.Empty; // bireysel, kurumsal
-        
+        [Key]
+        [Column("Customer_Id")]
+        public int CustomerId { get; set; }
 
-        
         [Required]
         [MaxLength(50)]
-        public string IdNo { get; set; } = string.Empty; // TC kimlik, vergi no
-        
-        [MaxLength(1000)]
+        [Column("Id_No")]
+        public string IdNo { get; set; } = string.Empty;
+
+        [MaxLength(500)]
         public string? Address { get; set; }
-        
+
         [MaxLength(20)]
         public string? Phone { get; set; }
-        
+
+        [Column("User_Id")]
+        public int? UserId { get; set; }
+
         // Navigation properties
-        [ForeignKey("UserId")]
-        public virtual User? User { get; set; }
-        
-        public virtual ICollection<Offer>? Offers { get; set; }
-        public virtual ICollection<Document>? Documents { get; set; }
+        public User User { get; set; } = null!;
+        public ICollection<Offer> Offers { get; set; } = new List<Offer>();
+        public ICollection<Document> Documents { get; set; } = new List<Document>();
     }
 } 

@@ -15,15 +15,16 @@ namespace InsuranceAPI.Controllers
     {
         private readonly IAuthService _authService;
         private readonly InsuranceDbContext _context;
-        
         private readonly IConfiguration _configuration;
+        private readonly ITokenBlacklistService _tokenBlacklistService;
         
         // Auth service dependency injection
-        public AuthController(IAuthService authService, InsuranceDbContext context, IConfiguration configuration)
+        public AuthController(IAuthService authService, InsuranceDbContext context, IConfiguration configuration, ITokenBlacklistService tokenBlacklistService)
         {
             _authService = authService;
             _context = context;
             _configuration = configuration;
+            _tokenBlacklistService = tokenBlacklistService;
         }
         
         // Kullanıcı giriş işlemi - JWT Authentication
@@ -103,6 +104,26 @@ namespace InsuranceAPI.Controllers
             return CreatedAtAction(nameof(Login), result);
         }
         
+        // Admin kayıt işlemi - özel endpoint (ADMIN ONLY)
+        [HttpPost("register/admin")]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult<AuthResponseDto>> RegisterAdmin([FromBody] AdminRegisterDto adminRegisterDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var result = await _authService.RegisterAdminAsync(adminRegisterDto);
+            
+            if (result == null)
+            {
+                return BadRequest(new { message = "Email already exists" });
+            }
+            
+            return CreatedAtAction(nameof(Login), result);
+        }
+        
         // Token doğrulama işlemi
         [HttpPost("validate")]
         public async Task<ActionResult> ValidateToken([FromBody] string token)
@@ -136,6 +157,27 @@ namespace InsuranceAPI.Controllers
             }
             
             return Ok(user);
+        }
+        
+        // Debug endpoint - admin user'ın role bilgisini kontrol et
+        [HttpGet("debug/admin")]
+        public async Task<ActionResult> DebugAdminUser()
+        {
+            var adminUser = await _context.Users
+                .Where(u => u.Email == "admin@insurance.com")
+                .Select(u => new { u.UserId, u.Name, u.Email, u.Role, u.CreatedAt })
+                .FirstOrDefaultAsync();
+                
+            if (adminUser == null)
+            {
+                return NotFound(new { message = "Admin user not found" });
+            }
+            
+            return Ok(new { 
+                message = "Admin user found", 
+                user = adminUser,
+                allUsers = await _context.Users.Select(u => new { u.UserId, u.Name, u.Email, u.Role }).ToListAsync()
+            });
         }
         
         // Test endpoint - JWT authentication aktif
@@ -239,16 +281,15 @@ namespace InsuranceAPI.Controllers
                     .OrderBy(u => u.CreatedAt)
                     .Select(u => new UserDto
                     {
-                        Id = u.Id,
+                        Id = u.UserId,
                         Name = u.Name,
                         Email = u.Email,
                         Role = u.Role,
                         CreatedAt = u.CreatedAt,
                         Customer = u.Customer != null ? new CustomerDto
                         {
-                            Id = u.Customer.Id,
+                            CustomerId = u.Customer.CustomerId,
                             UserId = u.Customer.UserId,
-                            Type = u.Customer.Type,
                             IdNo = u.Customer.IdNo,
                             Address = u.Customer.Address,
                             Phone = u.Customer.Phone
@@ -316,7 +357,7 @@ namespace InsuranceAPI.Controllers
                 user.Role = updateRoleDto.Role;
                 await _context.SaveChangesAsync();
                 
-                return Ok(new { message = "Kullanıcı rolü güncellendi", user = new { Id = user.Id, Name = user.Name, Role = user.Role } });
+                return Ok(new { message = "Kullanıcı rolü güncellendi", user = new { Id = user.UserId, Name = user.Name, Role = user.Role } });
             }
             catch (Exception ex)
             {
@@ -390,6 +431,88 @@ namespace InsuranceAPI.Controllers
             });
         }
         
+        // Logout endpoint - Token'ı blacklist'e ekle
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<ActionResult> Logout()
+        {
+            try
+            {
+                var userEmail = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+                var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+                
+                if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+                {
+                    return BadRequest(new { message = "Invalid authorization header" });
+                }
+                
+                var token = authHeader.Substring("Bearer ".Length);
+                
+                // Token'ı blacklist'e ekle
+                await _tokenBlacklistService.BlacklistTokenAsync(token, userEmail ?? "unknown", "logout");
+                
+                Console.WriteLine($"✅ User logged out successfully: {userEmail}");
+                
+                return Ok(new { 
+                    message = "Logout successful",
+                    userEmail = userEmail,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Logout error: {ex.Message}");
+                return StatusCode(500, new { message = "Logout failed", error = ex.Message });
+            }
+        }
+
+        // Admin endpoint - Token cleanup
+        [HttpPost("admin/cleanup-tokens")]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult> CleanupTokens()
+        {
+            try
+            {
+                await _tokenBlacklistService.CleanupExpiredTokensAsync();
+                var tokenCount = await _tokenBlacklistService.GetBlacklistedTokensCountAsync();
+                
+                return Ok(new { 
+                    message = "Token cleanup completed successfully",
+                    remainingTokens = tokenCount,
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Token cleanup error: {ex.Message}");
+                return StatusCode(500, new { message = "Token cleanup failed", error = ex.Message });
+            }
+        }
+
+        // Admin endpoint - Token statistics
+        [HttpGet("admin/token-stats")]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult> GetTokenStats()
+        {
+            try
+            {
+                var totalTokens = await _tokenBlacklistService.GetBlacklistedTokensCountAsync();
+                var cutoffTime = DateTime.UtcNow.AddHours(-4);
+                
+                return Ok(new { 
+                    totalBlacklistedTokens = totalTokens,
+                    cleanupCutoffTime = cutoffTime,
+                    tokensOlderThan4Hours = "Will be cleaned up automatically",
+                    timestamp = DateTime.UtcNow
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Token stats error: {ex.Message}");
+                return StatusCode(500, new { message = "Failed to get token stats", error = ex.Message });
+            }
+        }
+
         // Geçici endpoint - Admin şifresini güncelle
         [HttpPost("fix-admin-password")]
         [AllowAnonymous]

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using InsuranceAPI.DTOs;
 using InsuranceAPI.Services;
 using InsuranceAPI.Models;
+using System.Security.Claims;
 
 namespace InsuranceAPI.Controllers
 {
@@ -23,8 +24,46 @@ namespace InsuranceAPI.Controllers
         [HttpGet]
         public async Task<ActionResult<List<CustomerDto>>> GetAllCustomers()
         {
-            var customers = await _customerService.GetAllCustomersAsync();
-            return Ok(customers);
+            try
+            {
+                // JWT token'dan kullanıcı rolünü al
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userId = int.Parse(User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value ?? "0");
+                
+                Console.WriteLine($"CustomerController.GetAllCustomers - UserRole: {userRole}, UserId: {userId}");
+                Console.WriteLine($"All Claims: {string.Join(", ", User.Claims.Select(c => $"{c.Type}={c.Value}"))}");
+                
+                List<CustomerDto> customers;
+                
+                if (userRole == "admin")
+                {
+                    Console.WriteLine("Admin kullanıcısı - Tüm müşteriler getiriliyor");
+                    // Admin tüm müşterileri görebilir
+                    customers = await _customerService.GetAllCustomersAsync();
+                }
+                else if (userRole == "agent")
+                {
+                    Console.WriteLine($"Agent kullanıcısı (ID: {userId}) - Departman müşterileri getiriliyor");
+                    // Agent sadece kendi departmanındaki müşterileri görebilir
+                    customers = await _customerService.GetCustomersByAgentDepartmentAsync(userId);
+                }
+                else
+                {
+                    Console.WriteLine($"Customer kullanıcısı (ID: {userId}) - Kendi bilgileri getiriliyor");
+                    // Customer sadece kendi bilgilerini görebilir
+                    var customer = await _customerService.GetCustomerByUserIdAsync(userId);
+                    customers = customer != null ? new List<CustomerDto> { customer } : new List<CustomerDto>();
+                }
+                
+                Console.WriteLine($"Toplam {customers.Count} müşteri döndürüldü");
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"CustomerController.GetAllCustomers - Hata: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                return StatusCode(500, new { message = "Müşteri verileri alınırken hata oluştu", error = ex.Message });
+            }
         }
         
         // ID'ye göre müşteri getir
@@ -57,7 +96,7 @@ namespace InsuranceAPI.Controllers
                 return BadRequest(new { message = "Müşteri oluşturulamadı. ID No zaten kullanımda olabilir." });
             }
             
-            return CreatedAtAction(nameof(GetCustomerById), new { id = result.Id }, result);
+            return CreatedAtAction(nameof(GetCustomerById), new { id = result.CustomerId }, result);
         }
         
         // Müşteri güncelle
@@ -125,6 +164,24 @@ namespace InsuranceAPI.Controllers
             });
         }
         
+        // Debug endpoint - JWT token test
+        [HttpGet("debug/token")]
+        [Authorize]
+        public ActionResult DebugToken()
+        {
+            var claims = User.Claims.Select(c => new { Type = c.Type, Value = c.Value }).ToList();
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            
+            return Ok(new { 
+                message = "JWT Token doğrulandı",
+                claims = claims,
+                userRole = userRole,
+                userId = userId,
+                isAuthenticated = User.Identity?.IsAuthenticated ?? false
+            });
+        }
+        
         // Müşteri istatistikleri - dashboard için
         [HttpGet("statistics")]
         public async Task<ActionResult<object>> GetCustomerStatistics()
@@ -133,13 +190,6 @@ namespace InsuranceAPI.Controllers
             return Ok(stats);
         }
         
-        // Müşteri sayısına göre gruplandırma
-        [HttpGet("grouped")]
-        public async Task<ActionResult<object>> GetCustomersGrouped()
-        {
-            var grouped = await _customerService.GetCustomersGroupedAsync();
-            return Ok(grouped);
-        }
         
         // Müşteri aktivite geçmişi
         [HttpGet("{id}/activity")]

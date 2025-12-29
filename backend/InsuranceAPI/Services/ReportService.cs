@@ -51,12 +51,12 @@ namespace InsuranceAPI.Services
                     .Include(a => a.User)
                     .Select(a => new SalesByAgentDto
                     {
-                        AgentId = a.Id,
+                        AgentId = a.UserId,
                         AgentName = a.User.Name,
                         AgentCode = a.AgentCode,
-                        PoliciesSold = policies.Count(p => p.Offer.AgentId == a.Id),
-                        TotalPremium = policies.Where(p => p.Offer.AgentId == a.Id).Sum(p => p.TotalPremium),
-                        Commission = policies.Where(p => p.Offer.AgentId == a.Id).Sum(p => p.TotalPremium * 0.1m) // 10% commission
+                        PoliciesSold = policies.Count(p => p.Offer.AgentId == a.UserId),
+                        TotalPremium = policies.Where(p => p.Offer.AgentId == a.UserId).Sum(p => p.TotalPremium),
+                        Commission = policies.Where(p => p.Offer.AgentId == a.UserId).Sum(p => p.TotalPremium * 0.1m) // 10% commission
                     })
                     .Where(s => s.PoliciesSold > 0)
                     .OrderByDescending(s => s.TotalPremium)
@@ -129,22 +129,22 @@ namespace InsuranceAPI.Services
                     .Where(c => c.CreatedAt >= startDate && c.CreatedAt <= endDate);
 
                 if (filter.CustomerId.HasValue)
-                    claimsQuery = claimsQuery.Where(c => c.Policy.Offer.CustomerId == filter.CustomerId.Value);
+                    claimsQuery = claimsQuery.Where(c => c.Policy != null && c.Policy.Offer != null && c.Policy.Offer.CustomerId == filter.CustomerId.Value);
 
                 if (filter.AgentId.HasValue)
-                    claimsQuery = claimsQuery.Where(c => c.Policy.Offer.AgentId == filter.AgentId.Value);
+                    claimsQuery = claimsQuery.Where(c => c.Policy != null && c.Policy.Offer != null && c.Policy.Offer.AgentId == filter.AgentId.Value);
 
                 if (!string.IsNullOrEmpty(filter.Status))
-                    claimsQuery = claimsQuery.Where(c => c.Status.ToString() == filter.Status);
+                    claimsQuery = claimsQuery.Where(c => c.Status == filter.Status);
 
                 var claims = await claimsQuery.ToListAsync();
 
                 var totalClaims = claims.Count;
-                var pendingClaims = claims.Count(c => c.Status == ClaimStatus.Pending);
-                var approvedClaims = claims.Count(c => c.Status == ClaimStatus.Approved);
-                var rejectedClaims = claims.Count(c => c.Status == ClaimStatus.Rejected);
-                var resolvedClaims = claims.Count(c => c.Status == ClaimStatus.Resolved);
-                var totalClaimAmount = claims.Sum(c => c.ClaimAmount ?? 0);
+                var pendingClaims = claims.Count(c => c.Status == "Pending");
+                var approvedClaims = claims.Count(c => c.Status == "Approved");
+                var rejectedClaims = claims.Count(c => c.Status == "Rejected");
+                var resolvedClaims = claims.Count(c => c.Status == "Resolved");
+                var totalClaimAmount = claims.Sum(c => c.ApprovedAmount ?? 0);
                 var averageClaimAmount = totalClaims > 0 ? totalClaimAmount / totalClaims : 0;
 
                 // Claims by Status
@@ -152,9 +152,9 @@ namespace InsuranceAPI.Services
                     .GroupBy(c => c.Status)
                     .Select(g => new ClaimsByStatusDto
                     {
-                        Status = g.Key.ToString(),
+                        Status = g.Key,
                         Count = g.Count(),
-                        TotalAmount = g.Sum(c => c.ClaimAmount ?? 0),
+                        TotalAmount = g.Sum(c => c.ApprovedAmount ?? 0),
                         Percentage = totalClaims > 0 ? (decimal)g.Count() / totalClaims * 100 : 0
                     })
                     .OrderByDescending(c => c.Count)
@@ -165,10 +165,10 @@ namespace InsuranceAPI.Services
                     .GroupBy(c => c.Type)
                     .Select(g => new ClaimsByTypeDto
                     {
-                        ClaimType = g.Key.ToString(),
+                        ClaimType = g.Key,
                         Count = g.Count(),
-                        TotalAmount = g.Sum(c => c.ClaimAmount ?? 0),
-                        AverageAmount = g.Average(c => c.ClaimAmount ?? 0)
+                        TotalAmount = g.Sum(c => c.ApprovedAmount ?? 0),
+                        AverageAmount = g.Average(c => c.ApprovedAmount ?? 0)
                     })
                     .OrderByDescending(c => c.Count)
                     .ToList();
@@ -182,7 +182,7 @@ namespace InsuranceAPI.Services
                         Month = g.Key.Month,
                         MonthName = System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(g.Key.Month),
                         ClaimsCount = g.Count(),
-                        TotalAmount = g.Sum(c => c.ClaimAmount ?? 0)
+                        TotalAmount = g.Sum(c => c.ApprovedAmount ?? 0)
                     })
                     .OrderBy(c => c.Year)
                     .ThenBy(c => c.Month)
@@ -225,7 +225,7 @@ namespace InsuranceAPI.Services
                     .Where(c => c.User.CreatedAt >= startDate && c.User.CreatedAt <= endDate);
 
                 if (filter.CustomerId.HasValue)
-                    customersQuery = customersQuery.Where(c => c.Id == filter.CustomerId.Value);
+                    customersQuery = customersQuery.Where(c => c.CustomerId == filter.CustomerId.Value);
 
                 var customers = await customersQuery.ToListAsync();
 
@@ -234,17 +234,8 @@ namespace InsuranceAPI.Services
                 var activeCustomers = customers.Count(c => c.User.CreatedAt >= DateTime.UtcNow.AddMonths(-6));
                 var inactiveCustomers = totalCustomers - activeCustomers;
 
-                // Customers by Type
-                var customersByType = customers
-                    .GroupBy(c => c.Type)
-                    .Select(g => new CustomersByTypeDto
-                    {
-                        CustomerType = g.Key,
-                        Count = g.Count(),
-                        Percentage = totalCustomers > 0 ? (decimal)g.Count() / totalCustomers * 100 : 0
-                    })
-                    .OrderByDescending(c => c.Count)
-                    .ToList();
+                // Customers by Type - removed as Type field no longer exists
+                var customersByType = new List<CustomersByTypeDto>();
 
                 // Customers by Region (simplified - using address)
                 var customersByRegion = customers
@@ -310,24 +301,24 @@ namespace InsuranceAPI.Services
                     paymentsQuery = paymentsQuery.Where(p => p.Policy.Offer.AgentId == filter.AgentId.Value);
 
                 if (!string.IsNullOrEmpty(filter.Status))
-                    paymentsQuery = paymentsQuery.Where(p => p.Status.ToString() == filter.Status);
+                    paymentsQuery = paymentsQuery.Where(p => p.Status == filter.Status);
 
                 var payments = await paymentsQuery.ToListAsync();
 
                 var totalPayments = payments.Count;
-                var successfulPayments = payments.Count(p => p.Status == PaymentStatus.Basarili);
-                var failedPayments = payments.Count(p => p.Status == PaymentStatus.Basarisiz);
-                var pendingPayments = payments.Count(p => p.Status == PaymentStatus.Beklemede);
+                var successfulPayments = payments.Count(p => p.Status == "Basarili");
+                var failedPayments = payments.Count(p => p.Status == "Basarisiz");
+                var pendingPayments = payments.Count(p => p.Status == "Beklemede");
                 var totalAmount = payments.Sum(p => p.Amount);
-                var successfulAmount = payments.Where(p => p.Status == PaymentStatus.Basarili).Sum(p => p.Amount);
-                var failedAmount = payments.Where(p => p.Status == PaymentStatus.Basarisiz).Sum(p => p.Amount);
+                var successfulAmount = payments.Where(p => p.Status == "Basarili").Sum(p => p.Amount);
+                var failedAmount = payments.Where(p => p.Status == "Basarisiz").Sum(p => p.Amount);
 
                 // Payments by Method
                 var paymentsByMethod = payments
                     .GroupBy(p => p.Method)
                     .Select(g => new PaymentsByMethodDto
                     {
-                        PaymentMethod = g.Key.ToString(),
+                        PaymentMethod = g.Key,
                         Count = g.Count(),
                         TotalAmount = g.Sum(p => p.Amount),
                         Percentage = totalPayments > 0 ? (decimal)g.Count() / totalPayments * 100 : 0
@@ -415,7 +406,7 @@ namespace InsuranceAPI.Services
                         .Where(c => c.User.CreatedAt >= thisMonth)
                         .CountAsync(),
                     ["PendingClaims"] = await _context.Claims
-                        .Where(c => c.Status == ClaimStatus.Pending)
+                        .Where(c => c.Status == "Pending")
                         .CountAsync()
                 };
 
@@ -461,7 +452,7 @@ namespace InsuranceAPI.Services
                             {
                                 Period = $"{g.Key.Year}-{g.Key.Month:D2}",
                                 Claims = g.Count(),
-                                Amount = g.Sum(c => c.ClaimAmount ?? 0)
+                                Amount = g.Sum(c => c.ApprovedAmount ?? 0)
                             })
                             .OrderBy(x => x.Period)
                             .ToListAsync();

@@ -120,7 +120,7 @@ namespace InsuranceAPI.Controllers
                 }
 
                 var agent = await _agentService.CreateAgentAsync(createAgentDto);
-                return CreatedAtAction(nameof(GetAgentById), new { id = agent.Id }, agent);
+                return CreatedAtAction(nameof(GetAgentById), new { id = agent.UserId }, agent);
             }
             catch (InvalidOperationException ex)
             {
@@ -210,6 +210,97 @@ namespace InsuranceAPI.Controllers
             {
                 _logger.LogError(ex, "Error occurred while checking agent code uniqueness for {AgentCode}", agentCode);
                 return StatusCode(500, new { message = "Internal server error occurred while checking agent code uniqueness" });
+            }
+        }
+
+        /// <summary>
+        /// Acentanın departmanına göre teklifleri getirir
+        /// </summary>
+        [HttpGet("{agentId}/offers")]
+        [Authorize(Roles = "agent")]
+        public async Task<ActionResult<IEnumerable<OfferDto>>> GetOffersByAgentDepartment(int agentId)
+        {
+            try
+            {
+                var offers = await _agentService.GetOffersByAgentDepartmentAsync(agentId);
+                return Ok(offers);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving offers for agent {AgentId}", agentId);
+                return StatusCode(500, new { message = "Internal server error occurred while retrieving offers" });
+            }
+        }
+
+        /// <summary>
+        /// Acentanın departmanına göre bekleyen teklifleri getirir
+        /// </summary>
+        [HttpGet("{agentId}/offers/pending")]
+        [Authorize(Roles = "agent")]
+        public async Task<ActionResult<IEnumerable<OfferDto>>> GetPendingOffersByAgentDepartment(int agentId)
+        {
+            try
+            {
+                var offers = await _agentService.GetPendingOffersByAgentDepartmentAsync(agentId);
+                return Ok(offers);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving pending offers for agent {AgentId}", agentId);
+                return StatusCode(500, new { message = "Internal server error occurred while retrieving pending offers" });
+            }
+        }
+
+        /// <summary>
+        /// Teklifi günceller (durum değişikliği, not ekleme vb.)
+        /// </summary>
+        [HttpPut("{agentId}/offers/{offerId}")]
+        [Authorize(Roles = "agent")]
+        public async Task<ActionResult<OfferDto>> UpdateOffer(int agentId, int offerId, [FromBody] UpdateOfferDto updateOfferDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var offer = await _agentService.UpdateOfferAsync(agentId, offerId, updateOfferDto);
+                if (offer == null)
+                {
+                    return NotFound(new { message = $"Offer with ID {offerId} not found or not assigned to agent {agentId}" });
+                }
+
+                return Ok(offer);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating offer {OfferId} for agent {AgentId}", offerId, agentId);
+                return StatusCode(500, new { message = "Internal server error occurred while updating offer" });
+            }
+        }
+
+        /// <summary>
+        /// Agent'ın departmanına ait claim'leri getirir
+        /// </summary>
+        [HttpGet("{agentId}/department-claims")]
+        [Authorize(Roles = "agent")]
+        public async Task<ActionResult<IEnumerable<ClaimDto>>> GetClaimsByAgentDepartment(int agentId)
+        {
+            try
+            {
+                _logger.LogInformation("Getting claims for agent {AgentId}", agentId);
+                var claims = await _agentService.GetClaimsByAgentDepartmentAsync(agentId);
+                return Ok(claims);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving claims for agent {AgentId}", agentId);
+                return StatusCode(500, new { message = "Internal server error occurred while retrieving claims" });
             }
         }
     }

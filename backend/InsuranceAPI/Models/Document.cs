@@ -5,63 +5,71 @@ namespace InsuranceAPI.Models
 {
     public class Document
     {
-        public int Id { get; set; }
-        
-        [Required]
-        public int CustomerId { get; set; }
-        
-        public int? ClaimId { get; set; }
-        
-        public int? PolicyId { get; set; }
-        
+        [Key]
+        [Column("Document_Id")]
+        public int DocumentId { get; set; }
+
         [Required]
         [MaxLength(255)]
         public string FileName { get; set; } = string.Empty;
-        
+
         [Required]
-        [MaxLength(1000)]
+        [MaxLength(255)]
+        [Column("File_Url")]
         public string FileUrl { get; set; } = string.Empty;
-        
+
         [Required]
         [MaxLength(100)]
-        public string FileType { get; set; } = string.Empty; // pdf, jpg, png, doc, etc.
-        
+        [Column("File_Type")]
+        public string FileType { get; set; } = string.Empty;
+
         [Required]
-        public long FileSize { get; set; } // bytes
-        
+        public long FileSize { get; set; }
+
         [Required]
-        public DocumentCategory Category { get; set; } = DocumentCategory.Diger;
-        
-        [Required]
-        public DocumentStatus Status { get; set; } = DocumentStatus.Aktif;
-        
+        [MaxLength(100)]
+        public string Category { get; set; } = string.Empty; // Kimlik, Poliçe, Talep, vb.
+
         [MaxLength(500)]
         public string? Description { get; set; }
-        
-        [MaxLength(100)]
-        public string? Version { get; set; } = "1.0";
-        
+
+        [MaxLength(50)]
+        public string? Version { get; set; }
+
         [Required]
+        [MaxLength(50)]
+        public string Status { get; set; } = string.Empty; // Active, Archived, Deleted
+
+        [Column("Uploaded_At")]
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-        
-        public DateTime? UpdatedAt { get; set; }
-        
+
+        [Column("Expires_At")]
         public DateTime? ExpiresAt { get; set; }
-        
-        [Required]
-        public int UploadedByUserId { get; set; }
-        
+
+        [Column("Updated_At")]
+        public DateTime? UpdatedAt { get; set; }
+
+        // Foreign keys
+        [Column("Customer_Id")]
+        public int? CustomerId { get; set; }
+
+        [Column("Claim_Id")]
+        public int? ClaimId { get; set; }
+
+        [Column("Policy_Id")]
+        public int? PolicyId { get; set; }
+
+        [Column("Uploaded_By_User_Id")]
+        public int? UploadedByUserId { get; set; }
+
+        [Column("User_Id")]
+        public int? UserId { get; set; }
+
         // Navigation properties
-        [ForeignKey("CustomerId")]
-        public virtual Customer? Customer { get; set; }
-        
-        [ForeignKey("ClaimId")]
-        public virtual Claim? Claim { get; set; }
-        
-        [ForeignKey("PolicyId")]
-        public virtual Policy? Policy { get; set; }
-        
-        [ForeignKey("UploadedByUserId")]
-        public virtual User? UploadedByUser { get; set; }
+        public Customer? Customer { get; set; }
+        public Claim? Claim { get; set; }
+        public Policy? Policy { get; set; }
+        public User UploadedByUser { get; set; } = null!;
+        public User? User { get; set; }
     }
 }

@@ -34,6 +34,43 @@ namespace InsuranceAPI.Controllers
                 return StatusCode(500, new { message = "Hasar listesi alınırken hata oluştu", error = ex.Message });
             }
         }
+
+        // Customer'ın kendi hasarlarını getir
+        [HttpGet("my-claims")]
+        [Authorize(Roles = "customer")]
+        public async Task<ActionResult<List<ClaimDto>>> GetMyClaims()
+        {
+            try
+            {
+                // Debug: Print all claims in the token
+                Console.WriteLine("🔍 ClaimController: User claims:");
+                foreach (var claim in User.Claims)
+                {
+                    Console.WriteLine($"   {claim.Type}: {claim.Value}");
+                }
+                
+                // Debug: Check role claim specifically
+                var roleClaim = User.FindFirst(ClaimTypes.Role);
+                Console.WriteLine($"🔍 ClaimController: Role claim: {roleClaim?.Value ?? "NULL"}");
+                
+                // JWT token'dan kullanıcı ID'sini al
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                {
+                    return Unauthorized(new { message = "Geçersiz kullanıcı" });
+                }
+
+                Console.WriteLine($"🔍 ClaimController: User ID: {userId}");
+
+                // Customer'ın kendi hasarlarını getir
+                var claims = await _claimService.GetClaimsByUserAsync(userId);
+                return Ok(claims);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Hasar listesi alınırken hata oluştu", error = ex.Message });
+            }
+        }
         
         // ID'ye göre hasar getir (admin ve agent)
         [HttpGet("{id}")]
@@ -108,7 +145,7 @@ namespace InsuranceAPI.Controllers
                 }
                 
                 var claim = await _claimService.CreateClaimAsync(createDto, userId);
-                return CreatedAtAction(nameof(GetClaimById), new { id = claim.Id }, claim);
+                return CreatedAtAction(nameof(GetClaimById), new { id = claim.ClaimId }, claim);
             }
             catch (ArgumentException ex)
             {
@@ -152,6 +189,126 @@ namespace InsuranceAPI.Controllers
             }
             catch (Exception ex)
             {
+                return StatusCode(500, new { message = "Hasar güncellenirken hata oluştu", error = ex.Message });
+            }
+        }
+        
+        // Customer kendi pending claim'ini sil
+        [HttpDelete("my-claims/{id}")]
+        [Authorize(Roles = "customer")]
+        public async Task<ActionResult> DeleteMyClaim(int id)
+        {
+            try
+            {
+                // Kullanıcı ID'sini JWT token'dan al
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                {
+                    return Unauthorized(new { message = "Geçersiz kullanıcı" });
+                }
+                
+                // Claim'i al ve kontrol et
+                var claim = await _claimService.GetClaimByIdAsync(id);
+                if (claim == null)
+                {
+                    return NotFound(new { message = "Hasar bulunamadı" });
+                }
+                
+                // Sadece kendi claim'ini silebilir
+                if (claim.CreatedByUserId != userId)
+                {
+                    return Forbid();
+                }
+                
+                // Sadece Pending durumundaki claim'ler silinebilir
+                if (claim.Status != "Pending")
+                {
+                    return BadRequest(new { message = "Sadece beklemedeki hasar bildirimleri silinebilir" });
+                }
+                
+                var result = await _claimService.DeleteClaimAsync(id);
+                if (!result)
+                {
+                    return NotFound(new { message = "Hasar bulunamadı" });
+                }
+                
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Hasar silinirken hata oluştu", error = ex.Message });
+            }
+        }
+        
+        // Customer kendi pending claim'ini güncelle
+        [HttpPut("my-claims/{id}")]
+        [Authorize(Roles = "customer")]
+        public async Task<ActionResult<ClaimDto>> UpdateMyClaim(int id, [FromBody] UpdateClaimDto updateDto)
+        {
+            try
+            {
+                Console.WriteLine($"🔍 UpdateMyClaim: ClaimId={id}, UpdateDto={System.Text.Json.JsonSerializer.Serialize(updateDto)}");
+                
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+                
+                // Kullanıcı ID'sini JWT token'dan al
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out var userId))
+                {
+                    Console.WriteLine("❌ UpdateMyClaim: Geçersiz kullanıcı token");
+                    return Unauthorized(new { message = "Geçersiz kullanıcı" });
+                }
+                
+                Console.WriteLine($"🔍 UpdateMyClaim: UserId from token={userId}");
+                
+                // Claim'i al ve kontrol et
+                var claim = await _claimService.GetClaimByIdAsync(id);
+                if (claim == null)
+                {
+                    Console.WriteLine($"❌ UpdateMyClaim: Claim not found, id={id}");
+                    return NotFound(new { message = "Hasar bulunamadı" });
+                }
+                
+                Console.WriteLine($"🔍 UpdateMyClaim: Claim found, CreatedByUserId={claim.CreatedByUserId}, Status={claim.Status}");
+                
+                // Sadece kendi claim'ini güncelleyebilir
+                if (claim.CreatedByUserId != userId)
+                {
+                    Console.WriteLine($"❌ UpdateMyClaim: User mismatch, claim.CreatedByUserId={claim.CreatedByUserId}, userId={userId}");
+                    return Forbid();
+                }
+                
+                // Sadece Pending durumundaki claim'ler güncellenebilir
+                if (claim.Status != "Pending")
+                {
+                    Console.WriteLine($"❌ UpdateMyClaim: Status not Pending, status={claim.Status}");
+                    return BadRequest(new { message = "Sadece beklemedeki hasar bildirimleri güncellenebilir" });
+                }
+                
+                Console.WriteLine($"✅ UpdateMyClaim: All checks passed, calling UpdateMyClaimAsync");
+                
+                // Customer sadece description güncelleyebilir
+                var updatedClaim = await _claimService.UpdateMyClaimAsync(id, updateDto, userId);
+                
+                Console.WriteLine($"✅ UpdateMyClaim: Claim updated successfully");
+                return Ok(updatedClaim);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"❌ UpdateMyClaim: ArgumentException - {ex.Message}");
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine($"❌ UpdateMyClaim: UnauthorizedAccessException - {ex.Message}");
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ UpdateMyClaim: Exception - {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "Hasar güncellenirken hata oluştu", error = ex.Message });
             }
         }
